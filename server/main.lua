@@ -22,6 +22,7 @@ RegisterNetEvent('prison:server:SaveJailItems', function()
     local src = source
     local Player = exports['qb-core']:GetPlayer(src)
     if not Player then return end
+    if (Player.PlayerData.metadata.injail or 0) <= 0 then return end
     if not Player.PlayerData.metadata['jailitems'] or table.type(Player.PlayerData.metadata['jailitems']) == 'empty' then
         Player.SetMetaData('jailitems', Player.PlayerData.items)
         Player.AddMoney('cash', 80, 'jail money')
@@ -34,6 +35,7 @@ RegisterNetEvent('prison:server:GiveJailItems', function(escaped)
     local src = source
     local Player = exports['qb-core']:GetPlayer(src)
     if not Player then return end
+    if (Player.PlayerData.metadata.injail or 0) <= 0 then return end
     if escaped then
         Player.SetMetaData('jailitems', {})
         return
