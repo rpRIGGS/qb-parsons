@@ -42,7 +42,7 @@ Config.Security = {
     power = {localOnly = true, restoreSeconds = 300, controllableLights = {}}, -- never invoke global qb-weathersync blackout
     PSDispatch = {enabled = true, jobs = {'police', 'sheriff', 'state', 'leo'}, codes = {
         security_communications_failure = '10-90', gate_security_compromised = '10-90', failed_gate_hack = '10-90',
-        unauthorized_aircraft = '10-66', patient_departure = '10-80', patient_return = '10-80'
+        unauthorized_aircraft = '10-66', patient_departure = '10-80', patient_return = '10-80', guard_assault = '10-90', guard_down = '10-90'
     }},
     electrical = {item = 'electronickit', inside = nil, outside = nil, durationSeconds = 300},
     gate = {item = 'gatecrack', hack = nil, bypass = nil, doorIds = {}, compromisedSeconds = 300},
