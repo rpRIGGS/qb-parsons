@@ -31,14 +31,19 @@ Config.FacilityZone = { points = {}, minZ = nil, maxZ = nil } -- Parsons PolyZon
 -- Stage 7: one fenced-property polygon for patient eligibility and low-aircraft detection.
 -- maxZ is also the aircraft alert ceiling; minZ is the property floor.
 Config.Security = {
+    provider = 'Group Six',
+    minigames = {
+        electrical = {difficulty = {'easy', 'medium', 'medium'}, inputs = {'w', 'a', 's', 'd'}},
+        gate = {difficulty = {'medium', 'medium', 'hard'}, inputs = {'w', 'a', 's', 'd'}}
+    },
     aircraft = {enabled = true, verifySeconds = 5, cooldownSeconds = 180},
     monitoring = {incidentCooldownSeconds = 120},
     PSDispatch = {enabled = false, jobs = {'police', 'sheriff', 'state', 'leo'}, codes = {
         security_communications_failure = '10-90', gate_security_compromised = '10-90',
         unauthorized_aircraft = '10-66', patient_departure = '10-80', patient_return = '10-80'
     }},
-    electrical = {inside = nil, outside = nil, durationSeconds = 180},
-    gate = {hack = nil, bypass = nil, compromisedSeconds = 120},
+    electrical = {item = 'electronickit', inside = nil, outside = nil, durationSeconds = 180},
+    gate = {item = 'gatecrack', hack = nil, bypass = nil, compromisedSeconds = 120},
     -- Incident notifications are server events for a future dispatch/MDT adapter.
     -- No assumed dispatch resource or fictional NPC response.
 }
