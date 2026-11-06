@@ -98,6 +98,7 @@ local function act(src, action)
         return false
     end
     TriggerClientEvent('parsons:security:State', -1, state())
+    TriggerEvent('parsons:security:GateStateChanged', state())
     return true
 end
 local attempts = {}
@@ -151,6 +152,7 @@ CreateThread(function()
         if wasGate and not current.gateCompromised then emit('gate_security_restored') end
         if wasPower ~= current.powerFailure or wasGate ~= current.gateCompromised then
             TriggerClientEvent('parsons:security:State', -1, current)
+            TriggerEvent('parsons:security:GateStateChanged', current)
         end
         wasPower, wasGate = current.powerFailure, current.gateCompromised
     end
