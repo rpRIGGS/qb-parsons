@@ -126,6 +126,8 @@ exports('ConfirmBelongingsReconciled', function(targetId, acknowledged)
     if data.status ~= 'pending_return' and data.status ~= 'storing' then
         return false, 'record is not pending reconciliation'
     end
+    -- A storing record may contain items that were never successfully removed.
+    -- Never clear that record without separately resolving the interrupted admission.
     print(('[qb-parsons] Belongings reconciliation acknowledged for %s (previous status: %s)'):format(
         Player.PlayerData.citizenid, data.status))
     Player.Functions.SetMetaData(BELONGINGS_KEY, {})
@@ -138,6 +140,9 @@ end)
 -- silently discard the snapshot. Pending states require reconciliation.
 local function StoreBelongings(Player)
     if GetBelongings(Player) then return false, 'existing belongings require reconciliation' end
+    if type(Player.Functions.ClearInventory) ~= 'function' or type(Player.Functions.Save) ~= 'function' then
+        return false, 'required inventory functions unavailable'
+    end
     local snapshot = {}
     for slot, item in pairs(Player.PlayerData.items or {}) do
         if item and item.name and item.amount and item.amount > 0 then
@@ -173,6 +178,9 @@ local function ReturnBelongings(Player)
     if not data then return true end
     if GetHold(Player) then return false, 'patient still committed' end
     if data.status ~= 'stored' then return false, 'belongings require reconciliation' end
+    if type(Player.Functions.AddItem) ~= 'function' or type(Player.Functions.Save) ~= 'function' then
+        return false, 'required inventory functions unavailable'
+    end
     -- Mark pending before restoration. A partial failure must never cause
     -- the full snapshot to be issued again automatically.
     data.status = 'pending_return'
