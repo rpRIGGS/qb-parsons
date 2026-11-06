@@ -12,6 +12,7 @@ local Translations = {
         check_hold = 'Check commitment status',
         check_hold_prompt = '[E] Check commitment status',
         hold_active = 'Your commitment is still active.',
+        indefinite_hold = 'Your commitment has no scheduled end date.',
         discharge_pending = 'Your discharge is pending authorization.'
     }
 }
