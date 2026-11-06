@@ -40,6 +40,17 @@ qb-parsons is planned to transform prison mechanics into a small psychiatric and
 - Patient movement and access management
 - Incident records and unauthorized departure / escape handling
 
+## Parsons reception and security workflow (planned)
+
+- **Arrival:** `/commit` transfer to an inside-gate arrival point with directions to reception, or physical transport to reception. Arrival alone does not start the playable commitment clock.
+- **Medical reception:** Verify the commitment and room availability, secure belongings, assign a room, change into patient clothing, and complete check-in. Only then start the commitment's playable-time clock.
+- **Guard shack:** Separate security guard PED for checking remaining time and processing **authorized** checkout. Reception can also provide status. Judicial clearance remains required for court commitments.
+- **Checkout:** After authorization, return belongings, restore normal clothing, release the room, and place the patient outside the secured gate.
+- **Security:** Adapt upstream qb-prison gate and breach mechanics to Parsons and its installed qb-doorlock; an unauthorized departure never clears the Parsons commitment or stored belongings. Unlike upstream qb-prison, escape must not auto-release a patient.
+- **Rooms:** Limited capacity, persistent assignments, patient-specific door access subject to the installed qb-doorlock implementation. Patient rooms and MLO positions remain to be mapped.
+
+**Implementation warning:** Existing admission code still starts the clock at `AdmitPatient`, teleports to old prison spawn placeholders, and uses one desk. These behaviors must be refactored before deployment. See [admission and security workflow](development-reference/PARSONS-ADMISSION-SECURITY-WORKFLOW.md).
+
 ## Framework and Planned Integrations
 
 - QBCore (`qb-core`)
