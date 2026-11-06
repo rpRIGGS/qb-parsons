@@ -81,7 +81,6 @@ CreateThread(function()
                 {name = 'parsons_alarm_reset_' .. station, heading = point.w or 0,
                  minZ = point.z - 1, maxZ = point.z + 1},
                 {options = {{icon = 'fas fa-bell-slash', label = 'Reset Parsons security alarm',
-                    job = alarm.resetJobTypes,
                     action = function() TriggerServerEvent('parsons:security:ResetAlarm', station) end}},
                  distance = 2.5})
         end
