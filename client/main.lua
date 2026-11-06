@@ -29,6 +29,7 @@ RegisterNetEvent('parsons:client:Admit', function(state)
         QBCore.Functions.Notify(Lang:t('error.missing_admission_location'), 'error')
         return
     end
+    refreshSerial = refreshSerial + 1
     hold = state
     admitted = true
     TriggerEvent('parsons:client:AdmissionState', true)
@@ -43,6 +44,7 @@ RegisterNetEvent('parsons:client:Discharge', function()
     -- the server must validate discharge before emitting it.
     if not admitted then return end
     if not Config.Locations.outside then return end
+    refreshSerial = refreshSerial + 1
     admitted = false
     hold = nil
     TriggerEvent('parsons:client:AdmissionState', false)
