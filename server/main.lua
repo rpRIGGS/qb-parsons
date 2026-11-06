@@ -399,3 +399,22 @@ AddEventHandler('playerDropped', function()
     lastInside[source] = nil
     departureCooldown[source] = nil
 end)
+
+-- Trusted integrations can inspect a patient's current recovery status without
+-- changing commitment, room ownership or belongings.
+exports('GetPatientSecurityStatus', function(targetId)
+    if not IsTrustedCaller() then return nil, 'untrusted resource' end
+    local Player = GetPlayer(targetId)
+    if not Player then return nil, 'patient offline' end
+    local hold = TickHold(Player)
+    if not hold then return nil, 'no active hold' end
+    return {
+        checkedIn = hold.checkedIn == true,
+        insideFacility = InsideFacility(Player.PlayerData.source),
+        absentSince = hold.absentSince,
+        lastDepartedAt = hold.lastDepartedAt,
+        lastReturnedAt = hold.lastReturnedAt,
+        roomReservationExpired = hold.roomReservationExpired == true,
+        remainingSeconds = hold.remainingSeconds
+    }
+end)
