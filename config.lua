@@ -23,8 +23,8 @@ Config.Activities = {
 Config.EscapeRoomGraceHours = 48 -- Real-world hours away before an escaped patient's room may be reassigned
 Config.PatientRooms = {} -- Entries: {id = 'actual-room-id', doorIds = {'actual-qb-doorlock-id'}}; map after MLO inspection
 Config.PatientRoomStaffJobTypes = {'ems'} -- Authorized on-duty medical staff; do not grant blanket LEO access
-Config.Reception = { coords = nil, ped = 's_m_m_doctor_01' } -- Initial check-in and return to treatment
-Config.GuardShack = { coords = nil, ped = 's_m_m_security_01' } -- Status and authorized checkout
+Config.Reception = { coords = vector4(-1501.46, 849.16, 181.6, 249.1), additionalCoords = {vector4(-1514.51, 848.23, 181.6, 114.2)}, ped = 's_m_m_doctor_01' } -- Initial check-in and return to treatment
+Config.GuardShack = { coords = vector4(-1486.85, 881.13, 183.35, 341.37), ped = 's_m_m_security_01' } -- Status and authorized checkout
 Config.Arrival = nil -- vector4 inside front gate, never reuse prison spawns
 Config.Release = nil -- vector4 outside Parsons gate
 Config.FacilityZone = { -- Parsons PolyZone export, 2026-11-06; adjust vertical limits after devPoly inspection
