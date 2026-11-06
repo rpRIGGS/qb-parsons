@@ -64,6 +64,20 @@ AddEventHandler('parsons:server:PatientReturned', function(src, citizenid)
 end)
 -- Server-owned security state; interactions must be validated before invoking.
 local powerUntil, gateUntil = 0, 0
+local gateActor = nil
+local function syncGate(locked)
+    local gate = Config.Security and Config.Security.gate
+    if not gate or type(gate.doorIds) ~= 'table' or #gate.doorIds == 0 then return false end
+    if GetResourceState('qb-doorlock') ~= 'started' or not gateActor or not QBCore.Functions.GetPlayer(gateActor) then return false end
+    -- qbcore-fivem/qb-doorlock server updateState accepts sentSource as its eighth argument.
+    -- Never run this for an electrical outage; only a verified gate action/expiry.
+    for _, id in ipairs(gate.doorIds) do
+        if type(id) == 'string' or type(id) == 'number' then
+            TriggerEvent('qb-doorlock:server:updateState', id, locked, false, false, true, false, false, gateActor)
+        end
+    end
+    return true
+end
 local function state()
     local now = os.time()
     return {powerFailure = now < powerUntil, gateCompromised = now < gateUntil}
@@ -86,6 +100,8 @@ local function act(src, action)
     elseif action == 'gate_hack' then
         if not validPoint(src, cfg.gate.hack) or now < gateUntil then return false end
         gateUntil = now + math.max(30, tonumber(cfg.gate.compromisedSeconds) or 120)
+        gateActor = src
+        syncGate(false)
         emit('gate_security_compromised', {gateUntil = gateUntil})
     else
         return false
@@ -145,7 +161,11 @@ CreateThread(function()
         Wait(2000)
         local current = state()
         if wasPower and not current.powerFailure then emit('security_communications_restored') end
-        if wasGate and not current.gateCompromised then emit('gate_security_restored') end
+        if wasGate and not current.gateCompromised then
+            syncGate(true)
+            gateActor = nil
+            emit('gate_security_restored')
+        end
         if wasPower ~= current.powerFailure or wasGate ~= current.gateCompromised then
             TriggerClientEvent('parsons:security:State', -1, current)
             TriggerEvent('parsons:security:GateStateChanged', current)
