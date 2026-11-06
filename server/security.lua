@@ -56,6 +56,22 @@ local function emit(kind, details)
     end
     print(('[qb-parsons] Security incident %d: %s'):format(record.id, kind))
 end
+-- Guard assault reports are verified against the configured guard shack, not arbitrary
+-- client-supplied coordinates. A cooldown prevents repeated dispatch from the same fight.
+local lastGuardAlert = 0
+RegisterNetEvent('parsons:security:GuardThreat', function(kind)
+    local src = source
+    if kind ~= 'guard_assault' and kind ~= 'guard_down' then return end
+    local point = Config.GuardShack and Config.GuardShack.coords
+    if not point or type(point.x) ~= 'number' then return end
+    local ped = GetPlayerPed(src)
+    if not ped or ped == 0 then return end
+    if #(GetEntityCoords(ped) - vector3(point.x, point.y, point.z)) > 50.0 then return end
+    local now = os.time()
+    if now - lastGuardAlert < 120 then return end
+    lastGuardAlert = now
+    emit(kind, {coords = {x = point.x, y = point.y, z = point.z}, provider = 'Gruppe Sechs'})
+end)
 AddEventHandler('parsons:server:UnauthorizedDepartureVerified', function(src, citizenid)
     emit('patient_departure', {citizenid = citizenid})
 end)
