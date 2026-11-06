@@ -20,7 +20,8 @@ client_scripts {
     '@PolyZone/CircleZone.lua',
     '@PolyZone/ComboZone.lua',
     'client/main.lua',
-    -- Prison work and prisonbreak are intentionally excluded from Parsons
+    'client/jobs.lua',
+    'client/prisonbreak.lua'
 }
 
 server_script 'server/main.lua'
