@@ -2,6 +2,7 @@ local QBCore = exports['qb-core']:GetCoreObject({'Functions'})
 local admitted = false
 local hold = nil
 local deskPed = nil
+local guardPed = nil
 local refreshSerial = 0
 
 local function TransferTo(coords)
@@ -109,9 +110,48 @@ local function SetupDesk()
     end
 end
 
+-- Guard interaction is only a UI entry point; the server validates officer duty,
+-- patient identity, both players' positions, and active hold state.
+local function TransportPrompt(returning)
+    local response = lib.inputDialog(returning and 'Return patient from court' or 'Court transport checkout', {
+        {type = 'number', label = 'Patient server ID', required = true, min = 1}
+    })
+    if not response or not response[1] then return end
+    TriggerServerEvent('parsons:server:TransportAction', tonumber(response[1]), returning)
+end
+local function SetupGuard()
+    if guardPed or not Config.GuardShack or not Config.GuardShack.coords then return end
+    if GetResourceState('qb-target') ~= 'started' then return end
+    local model = joaat(Config.GuardShack.ped or 's_m_m_security_01')
+    RequestModel(model)
+    while not HasModelLoaded(model) do Wait(0) end
+    local point = Config.GuardShack.coords
+    guardPed = CreatePed(0, model, point.x, point.y, point.z - 1.0, point.w or 0.0, false, true)
+    FreezeEntityPosition(guardPed, true)
+    SetEntityInvincible(guardPed, false)
+    SetBlockingOfNonTemporaryEvents(guardPed, true)
+    TaskStartScenarioInPlace(guardPed, 'WORLD_HUMAN_GUARD_STAND', 0, true)
+    exports['qb-target']:AddTargetEntity(guardPed, {
+        options = {
+            {icon = 'fas fa-car', label = 'Check out patient for court transport',
+                action = function() TransportPrompt(false) end},
+            {icon = 'fas fa-clipboard-check', label = 'Return patient from court transport',
+                action = function() TransportPrompt(true) end}
+        }, distance = 2.5
+    })
+end
+RegisterNetEvent('parsons:client:TransportState', function(state)
+    if type(state) ~= 'table' or not state.active then return end
+    hold = state
+    admitted = true
+    QBCore.Functions.Notify(state.transportActive and 'Court transport authorized. Your hold is paused.'
+        or 'Court transport completed. Report to treatment.', 'primary')
+end)
+
 RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
     RefreshStatus()
     SetupDesk()
+    SetupGuard()
 end)
 RegisterNetEvent('QBCore:Client:OnPlayerUnload', function()
     refreshSerial = refreshSerial + 1
@@ -129,7 +169,7 @@ end)
 CreateThread(function()
     if Config.UseTarget then return end
     if not Config.Reception or not Config.Reception.coords then return end
-    local pos = Config.Locations.desk
+    local pos = Config.Reception.coords
     local zone = BoxZone:Create(vector3(pos.x, pos.y, pos.z), 2.75, 2.75, {name='parsons_desk',debugPoly=false})
     local inside = false
     zone:onPlayerInOut(function(entered)
