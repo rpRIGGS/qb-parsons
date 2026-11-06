@@ -3,14 +3,14 @@
 **Status:** Initial framework committed; Parsons MLO coordinates and FiveM testing outstanding.
 
 ## Implemented
-- Therapy, recreation, and rehabilitation definitions in `Config.Jobs`.
+- Therapy, recreation, and rehabilitation definitions in `Config.Activities`.
 - Server-only activity completion validation: active Parsons hold, mapped station proximity, elapsed duration and cooldown.
-- Patient-only `qb-target` stations generated from `Config.Locations.jobs`.
+- Patient-only `qb-target` stations generated from `Config.Locations.activities`.
 - Client session handling for start, finish and discharge cancellation.
 - No monetary rewards, items, prison jobs or changes to commitment duration.
 
 ## Configure after mapping the MLO
-Add a station under `Config.Locations.jobs` using the same key as `Config.Jobs`, for example:
+Add a station under `Config.Locations.activities` using the same key as `Config.Activities`, for example:
 
 ```lua
 therapy = {
