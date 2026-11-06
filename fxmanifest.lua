@@ -23,8 +23,8 @@ client_scripts {
     '@PolyZone/CircleZone.lua',
     '@PolyZone/ComboZone.lua',
     'client/main.lua',
-    'client/jobs.lua',
-    'client/prisonbreak.lua',
+    'client/activities.lua',
+    'client/escape.lua',
     'client/dispatch.lua',
     'client/security.lua'
 }
