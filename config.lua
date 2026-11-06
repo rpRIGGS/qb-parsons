@@ -37,7 +37,7 @@ Config.Security = {
     },
     aircraft = {enabled = true, verifySeconds = 5, cooldownSeconds = 180},
     monitoring = {incidentCooldownSeconds = 120},
-    PSDispatch = {enabled = false, jobs = {'police', 'sheriff', 'state', 'leo'}, codes = {
+    PSDispatch = {enabled = true, jobs = {'police', 'sheriff', 'state', 'leo'}, codes = {
         security_communications_failure = '10-90', gate_security_compromised = '10-90',
         unauthorized_aircraft = '10-66', patient_departure = '10-80', patient_return = '10-80'
     }},
