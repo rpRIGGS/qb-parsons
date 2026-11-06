@@ -97,29 +97,49 @@ exports('GetBelongingsStatus', function(targetId)
     return data and data.status or 'none'
 end)
 
--- A trusted inventory adapter may record custody only after successfully
--- removing and verifying the items in the configured qb-inventory.
-exports('RecordStoredBelongings', function(targetId, items)
-    if not IsTrustedCaller() then return false, 'untrusted resource' end
-    local Player = GetPlayer(targetId)
-    if not Player or not GetHold(Player) then return false, 'patient not committed' end
-    if GetBelongings(Player) then return false, 'belongings already stored' end
-    if type(items) ~= 'table' then return false, 'invalid belongings' end
+-- Use standard QBCore player inventory functions supported by qb-inventory.
+-- Persist the custody record BEFORE clearing inventory, so a restart cannot
+-- silently discard the snapshot. Pending states require reconciliation.
+local function StoreBelongings(Player)
+    if GetBelongings(Player) then return true end
     local snapshot = {}
-    for _, item in pairs(items) do
-        if type(item) ~= 'table' or type(item.name) ~= 'string' or
-            type(item.amount) ~= 'number' or item.amount < 1 then
-            return false, 'invalid item'
+    for slot, item in pairs(Player.PlayerData.items or {}) do
+        if item and item.name and item.amount and item.amount > 0 then
+            snapshot[#snapshot + 1] = {
+                name = item.name, amount = item.amount, info = item.info,
+                slot = item.slot or slot
+            }
         end
-        snapshot[#snapshot + 1] = {
-            name = item.name, amount = item.amount, info = item.info, slot = item.slot
-        }
     end
     Player.Functions.SetMetaData(BELONGINGS_KEY, {
         status = 'stored', items = snapshot, storedAt = os.time()
     })
+    Player.Functions.ClearInventory()
+    Player.Functions.Save()
     return true
-end)
+end
+
+local function ReturnBelongings(Player)
+    local data = GetBelongings(Player)
+    if not data then return true end
+    if GetHold(Player) then return false, 'patient still committed' end
+    if data.status == 'pending_return' then return false, 'return requires reconciliation' end
+    -- Mark pending before restoration. A partial failure must never cause
+    -- the full snapshot to be issued again automatically.
+    data.status = 'pending_return'
+    Player.Functions.SetMetaData(BELONGINGS_KEY, data)
+    Player.Functions.Save()
+    for _, item in ipairs(data.items or {}) do
+        local success = Player.Functions.AddItem(item.name, item.amount, item.slot, item.info)
+        if not success then
+            Player.Functions.Save()
+            return false, 'partial return: staff reconciliation required'
+        end
+    end
+    Player.Functions.SetMetaData(BELONGINGS_KEY, {})
+    Player.Functions.Save()
+    return true
+end
 
 -- Invoked by a trusted server resource only. Never expose admission through a client event.
 -- Integration must validate credential, legal authority and patient selection BEFORE calling.
@@ -130,6 +150,7 @@ exports('AdmitPatient', function(targetId, kind, phase, days)
     if GetHold(Player) then return false, 'patient already admitted' end
     local hold, err = BuildHold(kind, phase, days)
     if not hold then return false, err end
+    if not StoreBelongings(Player) then return false, 'belongings storage failed' end
     SetHold(Player, hold)
     lastTick[Player.PlayerData.source] = os.time()
     TriggerClientEvent('parsons:client:Admit', Player.PlayerData.source, PublicState(hold))
@@ -168,6 +189,10 @@ exports('DischargePatient', function(targetId, authority)
         return false, 'medical clearance required'
     end
     SetHold(Player, nil)
+    local returned, returnError = ReturnBelongings(Player)
+    if not returned then
+        print(('[qb-parsons] Belongings return requires attention for %s: %s'):format(Player.PlayerData.citizenid, returnError))
+    end
     departureCooldown[Player.PlayerData.source] = nil
     lastTick[Player.PlayerData.source] = nil
     TriggerClientEvent('parsons:client:Discharge', Player.PlayerData.source)
