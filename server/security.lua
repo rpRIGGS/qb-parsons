@@ -4,8 +4,6 @@ local incidents = {}
 local nextIncident = 0
 local aircraftSeen = {}
 local aircraftCooldown = {}
-local activeIncident = nil
-local incidentExpiresAt = 0
 
 local function withinProperty(pos)
     local z = Config.FacilityZone
@@ -26,16 +24,9 @@ local function withinProperty(pos)
     return inside
 end
 local function emit(kind, details)
-    if not activeIncident or os.time() >= incidentExpiresAt then
-        nextIncident = nextIncident + 1
-        activeIncident = nextIncident
-    end
-    incidentExpiresAt = os.time() + 900
-    local record = {id = activeIncident, kind = kind, time = os.time(), details = details or {}}
+    nextIncident = nextIncident + 1
+    local record = {id = nextIncident, kind = kind, time = os.time(), details = details or {}}
     if kind == 'security_communications_failure' then record.details.monitoringProvider = Config.Security.provider end
-    if kind == 'patient_return' or kind == 'security_communications_restored' then
-        activeIncident = nil
-    end
     incidents[#incidents + 1] = record
     if #incidents > 100 then table.remove(incidents, 1) end
     -- Trusted dispatch and SAMS adapters subscribe server-side, and decide recipients.
@@ -79,6 +70,7 @@ local function state()
 end
 local function validPoint(src, point)
     if not point or type(point.x) ~= 'number' or type(point.y) ~= 'number' or type(point.z) ~= 'number' then return false end
+    if type(src) ~= 'number' or src < 1 then return false end
     local ped = GetPlayerPed(src)
     return ped ~= 0 and #(GetEntityCoords(ped) - vector3(point.x, point.y, point.z)) <= 3.0
 end
@@ -115,6 +107,7 @@ local function hasTools(src, action)
     if not player then return false end
     local cfg = Config.Security
     local item = action == 'gate_hack' and cfg.gate.item or cfg.electrical.item
+    if type(item) ~= 'string' or item == '' then return false end
     local found = player.Functions.GetItemByName(item)
     return found and (found.amount or 0) >= 1
 end
