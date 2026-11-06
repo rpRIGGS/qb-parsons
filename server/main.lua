@@ -249,6 +249,8 @@ exports('DischargePatient', function(targetId, authority)
     local returned, returnError = ReturnBelongings(Player)
     if not returned then
         print(('[qb-parsons] Belongings return requires attention for %s: %s'):format(Player.PlayerData.citizenid, returnError))
+        TriggerClientEvent('QBCore:Notify', Player.PlayerData.source,
+            'Your belongings need staff assistance before they can be returned.', 'error', 10000)
     end
     departureCooldown[Player.PlayerData.source] = nil
     lastTick[Player.PlayerData.source] = nil
