@@ -60,6 +60,7 @@ local function UpdateAbsence(Player, hold, inside)
         if hold.absentSince ~= nil then
             hold.lastReturnedAt = now
             hold.absentSince = nil
+            hold.absenceReason = nil
             changed = true
             signal = 'parsons:server:PatientReturned'
         end
@@ -483,6 +484,18 @@ CreateThread(function()
 end)
 
 AddEventHandler('playerDropped', function()
+    local src = source
+    local Player = GetPlayer(src)
+    if Player then
+        local hold = GetHold(Player)
+        if hold and hold.checkedIn and not hold.absentSince then
+            hold.absentSince = os.time()
+            hold.lastDepartedAt = hold.absentSince
+            hold.absenceReason = 'disconnect'
+            SetHold(Player, hold)
+            Player.Functions.Save()
+        end
+    end
     lastTick[source] = nil
     lastEligible[source] = nil
     lastInside[source] = nil
