@@ -1,9 +1,8 @@
 Config = {}
 Config.UseTarget = GetConvar('UseTarget', 'false') == 'true' -- Use qb-target interactions (don't change this, go to your server.cfg and add `setr UseTarget true` to use this and just that from true to false or the other way around)
 
--- Parsons patient activities will be defined here as they are designed.
--- No prison electrician work or sentence-reduction jobs.
-Config.Jobs = {
+-- Parsons therapeutic, recreational and occupational activities. No sentence reductions.
+Config.Activities = {
     therapy = {label = 'Therapy Session', durationSeconds = 120, cooldownSeconds = 300},
     recreation = {label = 'Recreation', durationSeconds = 90, cooldownSeconds = 180},
     rehabilitation = {label = 'Rehabilitation Activity', durationSeconds = 120, cooldownSeconds = 300},
@@ -44,10 +43,8 @@ Config.Security = {
     }},
     electrical = {item = 'electronickit', inside = nil, outside = nil, durationSeconds = 180},
     gate = {item = 'gatecrack', hack = nil, bypass = nil, compromisedSeconds = 120},
-    -- Incident notifications are server events for a future dispatch/MDT adapter.
-    -- No assumed dispatch resource or fictional NPC response.
+    -- PS Dispatch is the optional configured police alert adapter; no legacy fallback.
 }
-Config.EscapeDetectionRadius = 200.0 -- Legacy prison radius; replace with validated facility polygon
 
 Config.Uniforms = {
     ['male'] = {
@@ -70,7 +67,7 @@ Config.Uniforms = {
     },
 }
 
-Config.PatientUniformsEnabled = false -- Preserve original prison uniform settings until Parsons clothing is planned
+Config.PatientUniformsEnabled = false -- Patient clothing to be finalized during Stages 1–4
 
 -- Original qb-prison coordinates retained as placeholders until Parsons MLO positions are provided.
 -- Do not treat these as final Parsons coordinates.
@@ -97,7 +94,7 @@ Config.Locations = {
     -- Keep other original prison coordinates above as temporary MLO placeholders.
     -- Set each activity station to { coords = vector3(...), radius = 4.0 } once mapped.
     -- nil disables interaction safely; no prison coordinates are substituted.
-    jobs = {
+    activities = {
         swimming = {}, tennis = {}, yoga = {}, meditation = {},
         gardening = {}, raking = {}, laundry = {}, foodprep = {},
         dishwashing = {}, restocking = {}, cleaning = {},
