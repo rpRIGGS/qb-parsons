@@ -1,100 +1,59 @@
-qb-parsons
+# qb-parsons
 
-Parsons Rehabilitation Center — Psychiatric & Rehabilitation Facility for QBCore FiveM
+**Parsons Rehabilitation Center — Psychiatric & Rehabilitation Facility**
 
-A QBCore-based psychiatric rehabilitation and treatment facility resource for FiveM, developed for PowerMoves RP and adapted from the original "qb-prison" (https://github.com/qbcore-framework/qb-prison) concept.
+A PowerMoves RP-specific QBCore FiveM resource adapted from the original [qb-prison](https://github.com/qbcore-fivem/qb-prison) project.
 
-Overview
+> **PowerMoves RP only:** This adaptation is being designed and configured specifically for the PowerMoves RP server, its Parsons Rehabilitation Center interior, and its gameplay systems. It is **not** intended as a drop-in, general-purpose resource for other FiveM servers. This describes the project's intended support and compatibility, **not** a restriction on rights granted by the original GPL license.
 
-qb-parsons transforms traditional prison mechanics into a psychiatric treatment and rehabilitation system, supporting voluntary patients, involuntary psychiatric evaluation holds, court-ordered treatment, and everyday rehabilitation roleplay.
+## Overview
 
-The resource is designed around Parsons Rehabilitation Center, a secure treatment facility with patient accommodations, controlled access, medical personnel, and rehabilitation activities.
+qb-parsons is planned to transform prison mechanics into a small psychiatric and rehabilitation facility with voluntary treatment, involuntary evaluation holds, court-ordered commitments, counseling, and secure patient accommodation.
 
-Planned Features
+**Development status:** Initial fork / planning. The features below are a roadmap, not a claim that they currently work. The underlying fork may still contain original qb-prison behavior until adapted.
 
-Patient Admissions
+## Planned Features
 
-- Voluntary residential admissions
+### Admissions and commitments
+- Voluntary residential admissions and outpatient treatment
 - Involuntary 72-hour psychiatric evaluation holds
-- Court-ordered commitments and extended treatment
-- Patient intake and registration
-- Patient status management
-- Authorized discharge and release procedures
+- Court-ordered commitments and authorized extensions
+- Intake, patient status, referrals, transfers, and discharge
+- Real elapsed-time hold tracking, including while a player is offline
+- No hold-time reductions from facility activities
 
-Patient Rooms & Personal Property
-
-- Individual patient room assignments
-- Personal storage using qb-inventory
-- Secure storage for restricted belongings
+### Patient rooms and belongings
+- Individual room assignments
+- Personal storage and secure handling of restricted belongings
 - Patient clothing and wardrobe access
-- Property return upon discharge
+- Property return during authorized discharge
 
-Psychiatric & Rehabilitation Activities
+### Treatment and rehabilitation
+- Individual and group counseling
+- Substance-use and gambling-related treatment roleplay
+- Recreational activities and supervised daily routines
+- Outpatient appointments and follow-up visits
 
-- Individual counseling sessions
-- Group therapy
-- Substance abuse rehabilitation
-- Gambling addiction counseling
-- Recreational activities
-- Supervised daily routines
-- Optional facility activities without reducing commitment duration
+### Facility operations and security
+- On-duty Parsons medical staff and authorized clinical admissions
+- Controlled doors, perimeter gate, and guard shack
+- Patient movement and access management
+- Incident records and unauthorized departure / escape handling
 
-Commitment Management
+## Framework and Planned Integrations
 
-- Real-time commitment tracking
-- Persistent hold records across player sessions
-- No sentence reductions through activities
-- Authorized extensions and continued treatment
-- Discharge management
-- Unauthorized departure and escape handling
+- QBCore (`qb-core`)
+- `qb-target`
+- PowerMoves RP customized `qb-inventory`
+- `ox_lib`
 
-Facility Operations
+The adaptation will retain the PowerMoves RP QBCore ecosystem; no migration to `ox_target` or `ox_inventory` is planned. Exact dependencies and setup steps will be documented as implementation progresses.
 
-- Staff-controlled patient admissions
-- Employee duty management
-- Patient room management
-- Secure doors and controlled facility access
-- Facility security and incident handling
-- Support for hospital referrals and patient transfers
+## Credits and License
 
-Outpatient Services
+Adapted from [QBCore qb-prison](https://github.com/qbcore-fivem/qb-prison). Original authors and contributors retain their respective credits. PowerMoves RP is responsible for its own adaptation.
 
-- Nonresidential counseling
-- Scheduled therapy appointments
-- Substance use treatment
-- Gambling rehabilitation programs
-- Follow-up treatment sessions
-
-Framework & Dependencies
-
-Framework: QBCore
-
-Planned integrations:
-
-- qb-core
-- qb-target
-- qb-inventory
-- ox_lib
-
-The resource is intended to work with existing QBCore servers without requiring ox_target or ox_inventory.
-
-Development Status
-
-Planning / Initial Fork
-
-qb-parsons will be developed from the existing qb-prison resource, retaining useful foundational mechanics while replacing correctional gameplay with psychiatric treatment and rehabilitation systems.
-
-Features described above are planned and are not necessarily implemented.
-
-Credits
-
-- Original prison resource: QBCore / qb-prison contributors
-- Parsons adaptation: PowerMoves RP
-
-This project is based on the original open-source QBCore prison resource. Original license and attribution requirements will be preserved.
-
-# qb-prison
-Prison/Jailing Script for QB-Policejob
+The PowerMoves RP-only statement above is a compatibility and project-scope notice, not a change to the open-source license. The original license notice follows.
 
 # License
 
