@@ -1,15 +1,15 @@
 # qb-parsons — Installation and Integration Reference
 
-**Status: planning, not an installation guide for a working release.** The fork still contains original qb-prison behavior. Do not install it as a functioning Parsons treatment system until conversion and testing are complete.
+**Status (2026-11-06): active implementation, not a tested release.** Stage 7 security code and an optional PS Dispatch adapter exist; Stage 1–4 admission/reception/discharge restructuring and live MLO testing are pending. Do not deploy as a complete Parsons treatment system.
 
 ## Current upstream dependencies and integration points
 
 - QBCore (`qb-core`) is required by the current resource.
-- The current `fxmanifest.lua` loads PolyZone client files, prison scripts, and `config.lua`; confirm these dependencies during the conversion.
+- `fxmanifest.lua` loads `@ox_lib/init.lua`, PolyZone client files, Parsons security and PS Dispatch adapters, legacy modules, and `config.lua`. `ox_lib` is a required dependency.
 - The current client code explicitly recognizes event invocation from `qb-policejob` and `qb-ambulancejob` for `prison:client:Enter`.
 - The current code uses `injail` and `jailitems` metadata, prison-specific events and a prison countdown. These must not be reused for Parsons patient status.
 - The PowerMoves target integration is QBCore, qb-target, custom qb-inventory and ox_lib.
-- `qb-policejob` changes will be needed for officer-initiated Parsons custody/transport requests; the precise changes must be determined by inspecting the installed PowerMoves version. **Do not replace normal arrest/jail behavior.**
+- **Approved correction:** do not modify `qb-policejob` for Parsons. `/commit` and `/uncommit` are planned in the PowerMoves `qb-ambulancejob` fork, with separate authorization for LEO/medical roles. Preserve normal arrest/jail behavior.
 
 ## Intended admission and transport workflows
 
@@ -38,9 +38,9 @@
 - [ ] Configure MLO positions, patient rooms, qb-target and custom qb-inventory.
 - [ ] Document dependency order and any SQL migrations once implemented.
 
-### qb-policejob integration (separate resource; changes not yet made)
+### qb-policejob — no Parsons modifications authorized
 - [ ] Inspect the actual PowerMoves qb-policejob fork/version and its jail/custody actions.
-- [ ] Add a distinct **Parsons transport/admission request** for authorized law enforcement job type/agency permissions; do not hardcode the job name `police`.
+- [ ] Preserve existing criminal jail/booking flows; Parsons commands and their authorization belong in the separate qb-ambulancejob integration.
 - [ ] Support an officer carrying out courtroom security duties after a judicial order.
 - [ ] Preserve normal jail/prison booking and avoid redirecting criminal incarceration to Parsons.
 - [ ] Use a secure server-side request/response interface with qb-parsons; record requesting officer and legal basis.
@@ -64,9 +64,18 @@
 
 - [ ] Document exact resource folder names and `server.cfg` ensure order.
 - [ ] Document installation of database tables/migrations.
-- [ ] Document necessary `qb-policejob` integration patch or fork version.
+- [ ] Document the separate `qb-ambulancejob` `/commit` and `/uncommit` integration and its authorization rules.
 - [ ] Document ambulance/dispatch integration and configuration.
 - [ ] Document Parsons MLO requirements, qb-target zones and inventory setup.
 - [ ] Document a reproducible end-to-end smoke test.
 
 **Scope:** These are integration requirements, not completed changes to qb-policejob, ambulancejob, or other PowerMoves repositories.
+
+## Current security integration (2026-11-06)
+
+- `ox_lib` required for configured electrical and gate skill checks; QBCore, qb-target and customized qb-inventory retained.
+- `electronickit` is the electrical sabotage item; `gatecrack` is the electronic gate item. No thermite or repair-kit substitution.
+- **Gruppe Sechs** is the GTA security company providing the front-gate guard and reporting Parsons alarms.
+- Optional PS Dispatch is implemented within qb-parsons; enable `Config.Security.PSDispatch.enabled` when `ps-dispatch` is installed. There is **no** legacy qb-policejob dispatch fallback. Calls and codes need live verification.
+- Physical qb-doorlock gate unlock/restore remains a code integration item; actual door IDs and positions are mapping inputs, not code blockers.
+- See [PARSONS-SERVER-MAPPING-CHECKLIST.md](PARSONS-SERVER-MAPPING-CHECKLIST.md) and [PARSONS-ADMISSION-SECURITY-WORKFLOW.md](PARSONS-ADMISSION-SECURITY-WORKFLOW.md).
