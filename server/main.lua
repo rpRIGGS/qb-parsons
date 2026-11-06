@@ -280,8 +280,9 @@ exports('AdmitPatient', function(targetId, kind, phase, days)
     if GetHold(Player) then return false, 'patient already admitted' end
     local hold, err = BuildHold(kind, phase, days)
     if not hold then return false, err end
-    local stored, storageError = StoreBelongings(Player)
-    if not stored then return false, storageError or 'belongings storage failed' end
+    -- Court/medical order records a pending arrival; custody is deferred to reception.
+    if GetBelongings(Player) then return false, 'existing belongings require reconciliation' end
+    hold.checkedIn = false
     SetHold(Player, hold)
     Player.Functions.Save()
     lastTick[Player.PlayerData.source] = os.time()
@@ -289,6 +290,21 @@ exports('AdmitPatient', function(targetId, kind, phase, days)
     lastInside[Player.PlayerData.source] = nil
     TriggerClientEvent('parsons:client:Admit', Player.PlayerData.source, PublicState(hold))
     return true
+end)
+
+-- Reception intake is a distinct phase; server verifies proximity before custody changes.
+-- Room assignment remains blocked until the real mapped room allocator is implemented.
+RegisterNetEvent('parsons:server:ReceptionCheckIn', function()
+    local src = source
+    local Player = GetPlayer(src)
+    local point = Config.Reception and Config.Reception.coords
+    if not Player or not point then return end
+    local ped = GetPlayerPed(src)
+    if not ped or ped == 0 or #(GetEntityCoords(ped) - vec3(point.x, point.y, point.z)) > 4.0 then return end
+    local hold = GetHold(Player)
+    if not hold or hold.checkedIn then return end
+    TriggerClientEvent('QBCore:Notify', src,
+        'Reception intake awaits mapped room allocation; your commitment is preserved and treatment time has not started.', 'primary', 10000)
 end)
 
 -- Extend commitment to 7/28 TOTAL playable days, preserving already-served online time.
@@ -349,7 +365,7 @@ RegisterNetEvent('parsons:server:RequestDischargeStatus', function()
     local src = source
     local Player = GetPlayer(src)
     if not Player then return end
-    local desk = Config.Locations.desk
+    local desk = (Config.GuardShack and Config.GuardShack.coords) or (Config.Reception and Config.Reception.coords)
     local ped = GetPlayerPed(src)
     if not desk or ped == 0 or #(GetEntityCoords(ped) - vec3(desk.x, desk.y, desk.z)) > 5.0 then return end
     local hold = TickHold(Player)
