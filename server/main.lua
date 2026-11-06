@@ -48,13 +48,44 @@ local function InsideFacility(src)
     return inside
 end
 
+-- Absence is wall-clock time, distinct from playable treatment time.
+-- Room release is only flagged here; physical room/door changes await mapped IDs.
+local function UpdateAbsence(Player, hold, inside)
+    if not hold or hold.checkedIn ~= true then return hold end
+    local now = os.time()
+    local changed = false
+    if inside then
+        if hold.absentSince ~= nil then
+            hold.absentSince = nil
+            changed = true
+        end
+    elseif hold.absentSince == nil then
+        hold.absentSince = now
+        changed = true
+    end
+    local grace = math.max(0, tonumber(Config.EscapeRoomGraceHours) or 48) * 3600
+    if hold.absentSince and now - hold.absentSince >= grace and hold.roomReservationExpired ~= true then
+        hold.roomReservationExpired = true
+        changed = true
+        -- A room manager must revoke access and free the assigned room atomically.
+        TriggerEvent('parsons:server:RoomGraceExpired', Player.PlayerData.citizenid, hold.roomId)
+    end
+    if changed then
+        Player.Functions.SetMetaData(METADATA_KEY, hold)
+        Player.Functions.Save()
+    end
+    return hold
+end
+
 local function TickHold(Player)
     local src = Player.PlayerData.source
     local now = os.time()
     local previous = lastTick[src]
     local previouslyEligible = lastEligible[src] == true
     local hold = GetHold(Player)
-    local eligible = hold ~= nil and hold.checkedIn == true and InsideFacility(src)
+    local inside = InsideFacility(src)
+    hold = UpdateAbsence(Player, hold, inside)
+    local eligible = hold ~= nil and hold.checkedIn == true and inside
     lastTick[src] = now
     lastEligible[src] = eligible
     if not hold or hold.remainingSeconds == nil or not previous or not eligible or not previouslyEligible then return hold end
@@ -76,7 +107,9 @@ local function PublicState(hold)
         startedAt = hold.startedAt,
         remainingSeconds = hold.remainingSeconds,
         expired = expired,
-        indefinite = hold.remainingSeconds == nil
+        indefinite = hold.remainingSeconds == nil,
+        checkedIn = hold.checkedIn == true,
+        roomReservationExpired = hold.roomReservationExpired == true
     }
 end
 
