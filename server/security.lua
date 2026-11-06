@@ -68,12 +68,18 @@ local gateActor = nil
 local function syncGate(locked)
     local gate = Config.Security and Config.Security.gate
     if not gate or type(gate.doorIds) ~= 'table' or #gate.doorIds == 0 then return false end
-    if GetResourceState('qb-doorlock') ~= 'started' or not gateActor or not QBCore.Functions.GetPlayer(gateActor) then return false end
+    if GetResourceState('qb-doorlock') ~= 'started' then return false end
+    local actor = gateActor
+    if not actor or not QBCore.Functions.GetPlayer(actor) then
+        local online = QBCore.Functions.GetPlayers()
+        actor = online[1]
+    end
+    if not actor then return false end
     -- qbcore-fivem/qb-doorlock server updateState accepts sentSource as its eighth argument.
     -- Never run this for an electrical outage; only a verified gate action/expiry.
     for _, id in ipairs(gate.doorIds) do
         if type(id) == 'string' or type(id) == 'number' then
-            TriggerEvent('qb-doorlock:server:updateState', id, locked, false, false, true, false, false, gateActor)
+            TriggerEvent('qb-doorlock:server:updateState', id, locked, false, false, true, false, false, actor)
         end
     end
     return true
