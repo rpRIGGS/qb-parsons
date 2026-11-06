@@ -57,6 +57,7 @@ local function UpdateAbsence(Player, hold, inside)
     local changed = false
     local signal = nil
     if inside then
+        if hold.transport and hold.transport.active then return hold end
         if hold.absentSince ~= nil then
             hold.lastReturnedAt = now
             hold.absentSince = nil
@@ -64,7 +65,7 @@ local function UpdateAbsence(Player, hold, inside)
             changed = true
             signal = 'parsons:server:PatientReturned'
         end
-    elseif hold.absentSince == nil and lastInside[Player.PlayerData.source] == true then
+    elseif hold.absentSince == nil and not (hold.transport and hold.transport.active) and lastInside[Player.PlayerData.source] == true then
         hold.absentSince = now
         hold.lastDepartedAt = now
         changed = true
@@ -97,7 +98,7 @@ local function TickHold(Player)
     local inside = InsideFacility(src)
     hold = UpdateAbsence(Player, hold, inside)
     lastInside[src] = inside
-    local eligible = hold ~= nil and hold.checkedIn == true and inside
+    local eligible = hold ~= nil and hold.checkedIn == true and inside and not (hold.transport and hold.transport.active)
     lastTick[src] = now
     lastEligible[src] = eligible
     if not hold or hold.remainingSeconds == nil or not previous or not eligible or not previouslyEligible then return hold end
@@ -122,7 +123,9 @@ local function PublicState(hold)
         indefinite = hold.remainingSeconds == nil,
         checkedIn = hold.checkedIn == true,
         roomReservationExpired = hold.roomReservationExpired == true,
-        absent = hold.absentSince ~= nil
+        absent = hold.absentSince ~= nil,
+        transportActive = hold.transport ~= nil and hold.transport.active == true,
+        roomId = hold.roomId
     }
 end
 
@@ -376,6 +379,66 @@ RegisterNetEvent('parsons:server:ReceptionCheckIn', function()
     TriggerClientEvent('QBCore:Notify', src, 'Reception check-in complete. Assigned room: ' .. roomId, 'success')
 end)
 
+-- Temporary court transport is never a discharge. Officer and patient must be at the
+-- configured guard shack. All checks are server-side; no client-supplied patient authority.
+local function NearGuard(src)
+    local point = Config.GuardShack and Config.GuardShack.coords
+    if not point then return false end
+    local ped = GetPlayerPed(src)
+    return ped and ped ~= 0 and #(GetEntityCoords(ped) - vec3(point.x, point.y, point.z)) <= 5.0
+end
+local function OnDutyLEO(src)
+    local officer = GetPlayer(src)
+    local job = officer and officer.PlayerData.job
+    return officer and job and job.type == 'leo' and job.onduty == true and officer or nil
+end
+local function TransportAction(src, patientId, returning)
+    local officer = OnDutyLEO(src)
+    local patient = GetPlayer(patientId)
+    if not officer or not patient or officer.PlayerData.citizenid == patient.PlayerData.citizenid
+        or not NearGuard(src) or not NearGuard(patient.PlayerData.source) then
+        return false, 'Authorized officer and patient must both be at the guard shack'
+    end
+    local hold = TickHold(patient)
+    if not hold or not hold.checkedIn then return false, 'Patient is not checked in' end
+    if returning then
+        if not hold.transport or not hold.transport.active then return false, 'No active transport' end
+        hold.transport.returnedAt = os.time()
+        hold.transport.active = false
+        hold.absentSince = nil
+        hold.absenceReason = nil
+        hold.lastReturnedAt = os.time()
+    else
+        if hold.transport and hold.transport.active then return false, 'Already checked out for transport' end
+        if not InsideFacility(patient.PlayerData.source) then return false, 'Patient must be inside Parsons' end
+        hold.transport = {active = true, officer = officer.PlayerData.citizenid, startedAt = os.time(), purpose = 'court'}
+        hold.absentSince = nil
+        hold.absenceReason = nil
+    end
+    SetHold(patient, hold)
+    patient.Functions.Save()
+    lastTick[patient.PlayerData.source] = os.time()
+    lastEligible[patient.PlayerData.source] = false
+    TriggerClientEvent('parsons:client:TransportState', patient.PlayerData.source, PublicState(hold))
+    TriggerEvent(returning and 'parsons:server:TransportReturned' or 'parsons:server:TransportStarted',
+        patient.PlayerData.source, patient.PlayerData.citizenid, officer.PlayerData.citizenid)
+    return true
+end
+RegisterNetEvent('parsons:server:TransportAction', function(patientId, returning)
+    local src = source
+    if type(patientId) ~= 'number' or patientId % 1 ~= 0 or type(returning) ~= 'boolean' then return end
+    local ok, err = TransportAction(src, patientId, returning)
+    TriggerClientEvent('QBCore:Notify', src, ok and (returning and 'Patient returned to Parsons.' or 'Patient checked out for court transport.')
+        or err, ok and 'success' or 'error')
+end)
+exports('GetTransportStatus', function(targetId)
+    if not IsTrustedCaller() then return nil, 'untrusted resource' end
+    local patient = GetPlayer(targetId)
+    if not patient then return nil, 'patient offline' end
+    local hold = GetHold(patient)
+    return hold and hold.transport or nil
+end)
+
 -- Extend commitment to 7/28 TOTAL playable days, preserving already-served online time.
 -- Authority and clinical/legal basis must be validated by the calling server resource.
 exports('ExtendMedicalHold', function(targetId, phase)
@@ -488,7 +551,7 @@ AddEventHandler('playerDropped', function()
     local Player = GetPlayer(src)
     if Player then
         local hold = GetHold(Player)
-        if hold and hold.checkedIn and not hold.absentSince then
+        if hold and hold.checkedIn and not hold.absentSince and not (hold.transport and hold.transport.active) then
             hold.absentSince = os.time()
             hold.lastDepartedAt = hold.absentSince
             hold.absenceReason = 'disconnect'
