@@ -31,3 +31,12 @@
 - The actual PowerMoves customized qb-inventory and FiveM runtime have not been exercised here.
 
 Do not mark this stage fully verified until these tests pass on the development server.
+
+## Upstream qb-prison API comparison (2026-11-06)
+
+Source: https://github.com/qbcore-fivem/qb-prison/blob/main/server/main.lua
+
+- Upstream stores `Player.PlayerData.items` in `jailitems`, then uses `Player.ClearInventory()`.
+- Upstream returns belongings with `exports['qb-inventory']:AddItem(src, name, amount, false, info, reason)` and then clears `jailitems` without checking each result.
+- Parsons now calls `Player.ClearInventory()` and `exports['qb-inventory']:AddItem(...)` to match the upstream API. It retains a separate `parsons_belongings` snapshot and checks grant results to avoid silently discarding unreturned items.
+- Confirm the customized PowerMoves qb-inventory accepts the same export signature during development-server testing.
