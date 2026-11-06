@@ -28,6 +28,16 @@ Config.GuardShack = { coords = nil, ped = 's_m_m_security_01' } -- Status and au
 Config.Arrival = nil -- vector4 inside front gate, never reuse prison spawns
 Config.Release = nil -- vector4 outside Parsons gate
 Config.FacilityZone = { points = {}, minZ = nil, maxZ = nil } -- Parsons PolyZone coordinates pending
+-- Stage 7: one fenced-property polygon for patient eligibility and low-aircraft detection.
+-- maxZ is also the aircraft alert ceiling; minZ is the property floor.
+Config.Security = {
+    aircraft = {enabled = true, verifySeconds = 5, cooldownSeconds = 180},
+    monitoring = {incidentCooldownSeconds = 120},
+    electrical = {inside = nil, outside = nil, durationSeconds = 180},
+    gate = {hack = nil, bypass = nil, compromisedSeconds = 120},
+    -- Incident notifications are server events for a future dispatch/MDT adapter.
+    -- No assumed dispatch resource or fictional NPC response.
+}
 Config.EscapeDetectionRadius = 200.0 -- Legacy prison radius; replace with validated facility polygon
 
 Config.Uniforms = {
