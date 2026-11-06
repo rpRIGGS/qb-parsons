@@ -56,3 +56,11 @@ Reviewed upstream `config.lua`, `client/prisonbreak.lua`, `client/main.lua`, and
 ## Approved facility boundary rule
 
 Use a mapped PolyZone polygon instead of the legacy center-radius test. The user will provide polygon vertices and vertical limits for the facility and authorized outdoor grounds. The server must verify player position before counting treatment time. Time runs only for an online, checked-in patient within the polygon; it pauses outside or offline. The same polygon should inform unauthorized departure alerts. Departure never releases the patient or clears belongings. Until mapping is supplied, do not use old prison coordinates as a substitute. Existing timer and departure code still need implementation updates.
+
+## Implementation progress — 2026-11-06
+
+- Server treatment timer now checks the configured polygon and `hold.checkedIn == true` before counting. It requires consecutive eligible samples to avoid charging an interval spent outside the facility.
+- Server unauthorized-departure verification uses the same polygon instead of the old center-radius test.
+- Client departure hints now use PolyZone with configured vertices and Z limits. No polygon is active until the real MLO is mapped.
+- **Important pending dependency:** Current admission flow has not yet been refactored into pending arrival plus reception check-in, so no existing hold has `checkedIn == true`; the timer intentionally does not advance until that workflow is implemented. Room assignment, inventory custody at reception, patient clothes, guard shack checkout, and live FiveM verification remain outstanding.
+- Existing `AdmitPatient` still stores belongings immediately and client admission still teleports to prison placeholders. Do not deploy as complete.
