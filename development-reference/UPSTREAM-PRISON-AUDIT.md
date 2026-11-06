@@ -110,3 +110,7 @@ California Welfare and Institutions Code section 5150 permits peace officers and
 - [ ] **Task 5:** Integrate and test the initial Parsons foundation, then make the completion commit(s). Actual MLO spawn/desk coordinates and PS-MDT authorization contracts are external dependencies, not reasons to invent placeholders as tested locations.
 
 **Transport clarification:** Transport is optional RP **before** `/commit`; the command directly admits the nearby patient. No scripted transport selection or `99999` prison sentence convention. The prison `/jail` and `/unjail` remain untouched.
+
+## Current fork implementation delta (2026-11-06)
+
+The earlier upstream audit sections document the **state at audit time** and should not be read as today's live code inventory. Parsons now has `server/security.lua`, `client/security.lua`, and `client/dispatch.lua`, a configurable facility polygon, `ox_lib` skill checks, and `electronickit`/`gatecrack` requirements. The PS Dispatch adapter is optional and has no legacy policejob fallback; security reports are from **Gruppe Sechs**. The existing qb-policejob criminal jail flow is intentionally untouched. Physical gate qb-doorlock hookup, remaining Stage 7 hardening and runtime verification are pending. Approved order is to finish Stage 7 code, then restructure Stages 1–4 admission/reception/checkout before Stage 8. This addendum supersedes old audit claims that no security implementation exists, but does not erase historical findings.
