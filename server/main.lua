@@ -79,7 +79,7 @@ local function BuildHold(kind, phase, days)
 end
 
 -- Parsons belongings are isolated from qb-prison's jailitems metadata.
--- This ledger is not an inventory adapter: never remove or grant items here.
+-- Custody metadata is separate from qb-prison's jailitems and is never auto-replayed after interruption.
 local BELONGINGS_KEY = 'parsons_belongings'
 
 local function GetBelongings(Player)
@@ -117,6 +117,12 @@ local function StoreBelongings(Player)
     Player.Functions.Save()
     Player.Functions.ClearInventory()
     Player.Functions.Save()
+    for _, item in pairs(Player.PlayerData.items or {}) do
+        if item and item.name and (tonumber(item.amount) or 0) > 0 then
+            print(('[qb-parsons] Inventory not cleared for %s; admission blocked for reconciliation'):format(Player.PlayerData.citizenid))
+            return false, 'inventory clearing incomplete; staff reconciliation required'
+        end
+    end
     local data = GetBelongings(Player)
     data.status = 'stored'
     Player.Functions.SetMetaData(BELONGINGS_KEY, data)
