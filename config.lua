@@ -33,6 +33,10 @@ Config.FacilityZone = { points = {}, minZ = nil, maxZ = nil } -- Parsons PolyZon
 Config.Security = {
     aircraft = {enabled = true, verifySeconds = 5, cooldownSeconds = 180},
     monitoring = {incidentCooldownSeconds = 120},
+    PSDispatch = {enabled = false, jobs = {'police', 'sheriff', 'state', 'leo'}, codes = {
+        security_communications_failure = '10-90', gate_security_compromised = '10-90',
+        unauthorized_aircraft = '10-66', patient_departure = '10-80', patient_return = '10-80'
+    }},
     electrical = {inside = nil, outside = nil, durationSeconds = 180},
     gate = {hack = nil, bypass = nil, compromisedSeconds = 120},
     -- Incident notifications are server events for a future dispatch/MDT adapter.
