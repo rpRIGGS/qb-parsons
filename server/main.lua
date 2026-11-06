@@ -78,6 +78,25 @@ local function BuildHold(kind, phase, days)
         remainingSeconds = days and (days * DAY_SECONDS) or nil}
 end
 
+-- Parsons belongings are isolated from qb-prison's jailitems metadata.
+-- This ledger is not an inventory adapter: never remove or grant items here.
+local BELONGINGS_KEY = 'parsons_belongings'
+
+local function GetBelongings(Player)
+    local data = Player.PlayerData.metadata and Player.PlayerData.metadata[BELONGINGS_KEY]
+    if type(data) ~= 'table' then return nil end
+    if data.status ~= 'stored' and data.status ~= 'pending_return' then return nil end
+    return data
+end
+
+exports('GetBelongingsStatus', function(targetId)
+    if not IsTrustedCaller() then return nil, 'untrusted resource' end
+    local Player = GetPlayer(targetId)
+    if not Player then return nil, 'patient offline' end
+    local data = GetBelongings(Player)
+    return data and data.status or 'none'
+end)
+
 -- Invoked by a trusted server resource only. Never expose admission through a client event.
 -- Integration must validate credential, legal authority and patient selection BEFORE calling.
 exports('AdmitPatient', function(targetId, kind, phase, days)
