@@ -390,7 +390,11 @@ local function CanAccessRoomDoor(src, doorId)
     local roomId = RoomForDoor(doorId)
     if not roomId then return false end
     local job = Player.PlayerData.job
-    if job and job.onduty and (job.type == 'ems' or job.type == 'leo') then return true end
+    if job and job.onduty then
+        for _, allowed in ipairs(Config.PatientRoomStaffJobTypes or {'ems'}) do
+            if job.type == allowed then return true end
+        end
+    end
     local hold = GetHold(Player)
     return hold ~= nil and hold.checkedIn == true and not hold.roomReservationExpired
         and not (hold.transport and hold.transport.active) and hold.roomId == roomId
