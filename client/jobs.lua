@@ -40,6 +40,7 @@ RegisterNetEvent('parsons:client:ActivityStatus', function(activity)
     StartActivityPresentation(activity.id)
     local duration = tonumber(activity.durationSeconds) or 0
     local startedAt = GetGameTimer()
+    local scenarioGraceUntil = startedAt + 2000
     QBCore.Functions.Notify((activity.label or 'Activity') .. ' started. Press Backspace to cancel.', 'primary')
     CreateThread(function()
         while serial == sessionId and admitted do
@@ -55,7 +56,7 @@ RegisterNetEvent('parsons:client:ActivityStatus', function(activity)
                 QBCore.Functions.Notify('Activity cancelled: you left the station.', 'error')
                 return
             end
-            if activityScenario and not IsPedUsingAnyScenario(PlayerPedId()) then
+            if activityScenario and GetGameTimer() > scenarioGraceUntil and not IsPedUsingAnyScenario(PlayerPedId()) then
                 TriggerServerEvent('parsons:server:CancelActivity')
                 return
             end
