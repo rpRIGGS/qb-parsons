@@ -1,9 +1,9 @@
 Config = {}
 Config.UseTarget = GetConvar('UseTarget', 'false') == 'true' -- Use qb-target interactions (don't change this, go to your server.cfg and add `setr UseTarget true` to use this and just that from true to false or the other way around)
 
-Config.Jobs = {
-    ['electrician'] = 'Electrician'
-}
+-- Parsons patient activities will be defined here as they are designed.
+-- No prison electrician work or sentence-reduction jobs.
+Config.Jobs = {}
 
 Config.Uniforms = {
     ['male'] = {
@@ -48,15 +48,7 @@ Config.Locations = {
         { coords = vector4(1768.33, 2566.08, 45.56, 176.83) },
         { coords = vector4(1696.09, 2469.4, 45.56, 1.4) }
     },
-    jobs = {
-        electrician = {
-            { coords = vector4(1761.46, 2540.41, 45.56, 272.249) },
-            { coords = vector4(1718.54, 2527.802, 45.56, 272.249) },
-            { coords = vector4(1700.199, 2474.811, 45.56, 272.249) },
-            { coords = vector4(1664.827, 2501.58, 45.56, 272.249) },
-            { coords = vector4(1621.622, 2509.302, 45.56, 272.249) },
-            { coords = vector4(1627.936, 2538.393, 45.56, 272.249) },
-            { coords = vector4(1625.1, 2575.988, 45.56, 272.249) }
-        }
-    }
+    -- Placeholder for future Parsons therapy, recreation and rehabilitation activity coordinates.
+    -- Keep other original prison coordinates above as temporary MLO placeholders.
+    jobs = {}
 }
