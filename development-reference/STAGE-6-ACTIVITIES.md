@@ -53,3 +53,7 @@ The existing qb-spawn jail check must also recognize active `PlayerData.metadata
 - The `README.md` now carries the `qb-spawn` installation requirement; the actual installed qb-spawn version must be inspected before writing a drop-in patch.
 
 **Remaining:** Real MLO station positions, in-server testing, and a decision on whether staff-led therapy and clinical history belong in Stage 8 / SAMS integration rather than the patient activity engine. No claim of FiveM verification.
+
+## Cross-stage status clarification (2026-11-06)
+
+Stage 6 activity code is present but awaits mapped stations and runtime verification. Stage 7 introduces `ox_lib` as a dependency for security skill checks; activity UI is not thereby automatically converted to ox_lib. The upcoming Stages 1–4 admission refactor must keep activity eligibility limited to checked-in patients inside the configured facility polygon. No activities shorten commitment time. Security monitoring and police calls identify **Gruppe Sechs**, via optional PS Dispatch; these do not change activity scope.
