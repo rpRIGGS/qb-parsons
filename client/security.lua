@@ -9,7 +9,7 @@ local function start(key)
     if busy then return end
     TriggerServerEvent('parsons:security:BeginAction', key)
 end
-RegisterNetEvent('parsons:security:StartAction', function(key)
+RegisterNetEvent('parsons:security:StartAction', function(key, token)
     if busy then return end
     local label
     for _, entry in ipairs(actions) do if entry.key == key then label = entry.label break end end
@@ -20,10 +20,10 @@ RegisterNetEvent('parsons:security:StartAction', function(key)
         {disableMovement = true, disableCarMovement = true, disableMouse = false, disableCombat = true},
         {}, {}, {}, function()
             busy = false
-            TriggerServerEvent('parsons:security:FinishAction', key, true)
+            TriggerServerEvent('parsons:security:FinishAction', key, token, true)
         end, function()
             busy = false
-            TriggerServerEvent('parsons:security:FinishAction', key, false)
+            TriggerServerEvent('parsons:security:FinishAction', key, token, false)
         end)
 end)
 CreateThread(function()
