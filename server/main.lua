@@ -69,7 +69,10 @@ end
 local function UpdateAbsence(Player, hold, inside)
     if not hold or hold.checkedIn ~= true then return hold end
     local now = os.time()
-    if hold.roomId and hold.absentSince and not (hold.transport and hold.transport.active) then
+    -- Never recreate an expired reservation's absence timestamp after an offline sweep.
+    if hold.roomId and hold.absentSince and not hold.roomReservationExpired
+        and GetResourceKvpString(RoomKey(hold.roomId)) == Player.PlayerData.citizenid
+        and not (hold.transport and hold.transport.active) then
         MarkRoomAbsence(hold.roomId, Player.PlayerData.citizenid, hold.absentSince)
     end
     local reservationLost = hold.roomId and GetResourceKvpString(RoomKey(hold.roomId)) ~= Player.PlayerData.citizenid
@@ -455,7 +458,7 @@ local function TransportAction(src, patientId, returning)
         hold.transport.active = false
         hold.absentSince = nil
         hold.absenceReason = nil
-        MarkRoomAbsence(hold.roomId, patient.PlayerData.citizenid, 0)
+        if not hold.roomReservationExpired then MarkRoomAbsence(hold.roomId, patient.PlayerData.citizenid, 0) end
         hold.lastReturnedAt = os.time()
     else
         if hold.transport and hold.transport.active then return false, 'Already checked out for transport' end
