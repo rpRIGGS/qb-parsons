@@ -30,6 +30,7 @@ RegisterNetEvent('parsons:client:Admit', function(state)
     end
     hold = state
     admitted = true
+    TriggerEvent('parsons:client:AdmissionState', true)
     local spawn = Config.Locations.spawns[math.random(#Config.Locations.spawns)]
     TransferTo(spawn.coords)
     ApplyPatientClothes()
@@ -43,6 +44,7 @@ RegisterNetEvent('parsons:client:Discharge', function()
     if not Config.Locations.outside then return end
     admitted = false
     hold = nil
+    TriggerEvent('parsons:client:AdmissionState', false)
     TriggerEvent('qb-clothes:loadPlayerSkin')
     TransferTo(Config.Locations.outside)
     QBCore.Functions.Notify(Lang:t('success.discharged'), 'success')
@@ -53,10 +55,12 @@ local function RefreshStatus()
         if type(state) ~= 'table' or not state.active then
             admitted = false
             hold = nil
+            TriggerEvent('parsons:client:AdmissionState', false)
             return
         end
         hold = state
         admitted = true
+        TriggerEvent('parsons:client:AdmissionState', true)
         -- Rejoin/restart: reuse qb-prison's return-to-facility pattern.
         if Config.Locations.spawns and #Config.Locations.spawns > 0 then
             TransferTo(Config.Locations.spawns[math.random(#Config.Locations.spawns)].coords)
@@ -96,6 +100,7 @@ end)
 RegisterNetEvent('QBCore:Client:OnPlayerUnload', function()
     admitted = false
     hold = nil
+    TriggerEvent('parsons:client:AdmissionState', false)
 end)
 AddEventHandler('onResourceStart', function(resource)
     if resource ~= GetCurrentResourceName() then return end
