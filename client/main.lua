@@ -101,7 +101,7 @@ local function SetupDesk()
             options = {
                 {icon = 'fas fa-clipboard-check', label = 'Reception check-in',
                     action = function() TriggerServerEvent('parsons:server:ReceptionCheckIn') end,
-                    canInteract = function() return admitted and hold and not hold.checkedIn end},
+                    canInteract = function() return admitted and hold and (not hold.checkedIn or hold.roomReservationExpired) end},
                 {icon = 'fas fa-clipboard', label = Lang:t('info.check_hold'), action = RequestDischargeStatus,
                     canInteract = function() return admitted end}
             },
