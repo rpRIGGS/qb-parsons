@@ -81,6 +81,15 @@ local function UpdateAbsence(Player, hold, inside)
         hold.roomReservationExpired = true
         changed = true
     end
+    -- Expire wall-clock grace BEFORE clearing absence on return. A patient who
+    -- reconnects after 48h must not retain a room simply by appearing inside.
+    local grace = math.max(0, tonumber(Config.EscapeRoomGraceHours) or 48) * 3600
+    if hold.absentSince and now - hold.absentSince >= grace and not hold.roomReservationExpired then
+        hold.roomReservationExpired = true
+        ClearRoomReservation(hold.roomId, Player.PlayerData.citizenid)
+        changed = true
+        TriggerEvent('parsons:server:RoomGraceExpired', Player.PlayerData.citizenid, hold.roomId)
+    end
     local signal = nil
     if inside then
         if hold.transport and hold.transport.active then return hold end
@@ -88,24 +97,19 @@ local function UpdateAbsence(Player, hold, inside)
             hold.lastReturnedAt = now
             hold.absentSince = nil
             hold.absenceReason = nil
-            if hold.roomId then MarkRoomAbsence(hold.roomId, Player.PlayerData.citizenid, 0) end
+            if hold.roomId and not hold.roomReservationExpired then
+                MarkRoomAbsence(hold.roomId, Player.PlayerData.citizenid, 0)
+            end
             changed = true
             signal = 'parsons:server:PatientReturned'
         end
-    elseif hold.absentSince == nil and not (hold.transport and hold.transport.active) and lastInside[Player.PlayerData.source] == true then
+    elseif hold.absentSince == nil and not (hold.transport and hold.transport.active)
+        and lastInside[Player.PlayerData.source] == true then
         hold.absentSince = now
         hold.lastDepartedAt = now
         MarkRoomAbsence(hold.roomId, Player.PlayerData.citizenid, now)
         changed = true
         signal = 'parsons:server:UnauthorizedDepartureVerified'
-    end
-    local grace = math.max(0, tonumber(Config.EscapeRoomGraceHours) or 48) * 3600
-    if hold.absentSince and now - hold.absentSince >= grace and hold.roomReservationExpired ~= true then
-        hold.roomReservationExpired = true
-        ClearRoomReservation(hold.roomId, Player.PlayerData.citizenid)
-        changed = true
-        -- A room manager must revoke access and free the assigned room atomically.
-        TriggerEvent('parsons:server:RoomGraceExpired', Player.PlayerData.citizenid, hold.roomId)
     end
     if changed then
         Player.Functions.SetMetaData(METADATA_KEY, hold)
