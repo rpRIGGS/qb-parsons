@@ -42,7 +42,7 @@ Config.Security = {
         unauthorized_aircraft = '10-66', patient_departure = '10-80', patient_return = '10-80'
     }},
     electrical = {item = 'electronickit', inside = nil, outside = nil, durationSeconds = 180},
-    gate = {item = 'gatecrack', hack = nil, bypass = nil, compromisedSeconds = 120},
+    gate = {item = 'gatecrack', hack = nil, bypass = nil, doorIds = {}, compromisedSeconds = 120},
     -- PS Dispatch is the optional configured police alert adapter; no legacy fallback.
 }
 
