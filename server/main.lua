@@ -143,10 +143,14 @@ RegisterNetEvent('parsons:server:RequestDischargeStatus', function()
     local hold = TickHold(Player)
     if not hold then
         TriggerClientEvent('QBCore:Notify', src, Lang:t('error.no_active_hold'), 'error')
-    elseif hold.remainingSeconds ~= nil and hold.remainingSeconds <= 0 then
+    elseif hold.remainingSeconds == nil then
+        TriggerClientEvent('QBCore:Notify', src, Lang:t('info.indefinite_hold'), 'primary')
+    elseif hold.remainingSeconds <= 0 then
         TriggerClientEvent('QBCore:Notify', src, Lang:t('info.discharge_pending'), 'primary')
     else
-        TriggerClientEvent('QBCore:Notify', src, Lang:t('info.hold_active'), 'primary')
+        local hours = math.floor(hold.remainingSeconds / 3600)
+        local minutes = math.ceil((hold.remainingSeconds % 3600) / 60)
+        TriggerClientEvent('QBCore:Notify', src, ('Commitment remaining: %d hours, %d minutes'):format(hours, minutes), 'primary')
     end
 end)
 
