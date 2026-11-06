@@ -161,6 +161,7 @@ exports('AdmitPatient', function(targetId, kind, phase, days)
     local stored, storageError = StoreBelongings(Player)
     if not stored then return false, storageError or 'belongings storage failed' end
     SetHold(Player, hold)
+    Player.Functions.Save()
     lastTick[Player.PlayerData.source] = os.time()
     TriggerClientEvent('parsons:client:Admit', Player.PlayerData.source, PublicState(hold))
     return true
@@ -182,6 +183,7 @@ exports('ExtendMedicalHold', function(targetId, phase)
     hold.remainingSeconds = math.max(0, days * DAY_SECONDS - served)
     hold.phase = phase
     SetHold(Player, hold)
+    Player.Functions.Save()
     return true
 end)
 
@@ -198,6 +200,7 @@ exports('DischargePatient', function(targetId, authority)
         return false, 'medical clearance required'
     end
     SetHold(Player, nil)
+    Player.Functions.Save()
     local returned, returnError = ReturnBelongings(Player)
     if not returned then
         print(('[qb-parsons] Belongings return requires attention for %s: %s'):format(Player.PlayerData.citizenid, returnError))
