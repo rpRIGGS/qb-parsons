@@ -40,7 +40,7 @@ local function emit(kind, details)
     -- Trusted dispatch and SAMS adapters subscribe server-side, and decide recipients.
     TriggerEvent('parsons:security:Incident', record)
     local dispatch = Config.Security and Config.Security.PSDispatch
-    if dispatch and dispatch.enabled and GetResourceState('ps-dispatch') == 'started' then
+    if dispatch and dispatch.enabled and dispatch.codes and dispatch.codes[kind] and GetResourceState('ps-dispatch') == 'started' then
         local point = record.details.coords or (Config.Reception and Config.Reception.coords) or
             (Config.FacilityZone.points and Config.FacilityZone.points[1])
         if point and point.x and point.y then
