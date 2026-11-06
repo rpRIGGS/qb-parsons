@@ -129,13 +129,14 @@ local function SetupGuard()
     guardPed = CreatePed(0, model, point.x, point.y, point.z - 1.0, point.w or 0.0, false, true)
     FreezeEntityPosition(guardPed, true)
     SetEntityInvincible(guardPed, false)
-    SetBlockingOfNonTemporaryEvents(guardPed, true)
+    SetBlockingOfNonTemporaryEvents(guardPed, false)
     TaskStartScenarioInPlace(guardPed, 'WORLD_HUMAN_GUARD_STAND', 0, true)
     GiveWeaponToPed(guardPed, joaat((Config.Security.guard and Config.Security.guard.weapon) or 'WEAPON_NIGHTSTICK'), 1, false, true)
     SetPedFleeAttributes(guardPed, 0, false)
-    SetPedCombatAttributes(guardPed, 46, false)
+    SetPedCombatAttributes(guardPed, 46, true)
     SetPedCombatRange(guardPed, 0)
     SetPedSeeingRange(guardPed, 12.0)
+    SetPedAlertness(guardPed, 2)
     exports['qb-target']:AddTargetEntity(guardPed, {
         options = {
             {icon = 'fas fa-car', label = 'Check out patient for court transport',
@@ -156,8 +157,7 @@ end)
 -- Local guard life cycle: defensive nightstick, no pursuit, and no respawn while
 -- a player is within the configured clear radius. Coordinates are MLO-supplied.
 local guardDeathAt = nil
-local guardReportedDown = false
-local guardReportedAssault = false
+
 local function PlayersNearGuard(radius)
     local point = Config.GuardShack and Config.GuardShack.coords
     if not point then return true end
@@ -175,25 +175,16 @@ CreateThread(function()
         Wait(2000)
         if guardPed and DoesEntityExist(guardPed) then
             if IsPedDeadOrDying(guardPed, true) then
-                if not guardReportedDown then
-                    guardReportedDown = true
-                    TriggerServerEvent('parsons:security:GuardThreat', 'guard_down')
-                end
                 guardDeathAt = guardDeathAt or GetGameTimer()
                 if GetGameTimer() - guardDeathAt >= (tonumber(Config.Security.guard.respawnSeconds) or 300) * 1000
                     and not PlayersNearGuard(tonumber(Config.Security.guard.clearRadius) or 35.0) then
-                    if Config.UseTarget then exports['qb-target']:RemoveTargetEntity(guardPed) end
+                    if GetResourceState('qb-target') == 'started' then exports['qb-target']:RemoveTargetEntity(guardPed) end
                     DeleteEntity(guardPed)
                     guardPed = nil
                     guardDeathAt = nil
-                    guardReportedDown = false
-                    guardReportedAssault = false
                     SetupGuard()
                 end
-            elseif HasEntityBeenDamagedByAnyPed(guardPed) and not guardReportedAssault then
-                guardReportedAssault = true
-                TriggerServerEvent('parsons:security:GuardThreat', 'guard_assault')
-                ClearEntityLastDamageEntity(guardPed)
+
             end
         end
     end
@@ -215,6 +206,7 @@ AddEventHandler('onResourceStart', function(resource)
     Wait(500)
     if LocalPlayer.state.isLoggedIn then RefreshStatus() end
     SetupDesk()
+    SetupGuard()
 end)
 
 CreateThread(function()
