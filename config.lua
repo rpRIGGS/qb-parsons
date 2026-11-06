@@ -6,7 +6,18 @@ Config.UseTarget = GetConvar('UseTarget', 'false') == 'true' -- Use qb-target in
 Config.Jobs = {
     therapy = {label = 'Therapy Session', durationSeconds = 120, cooldownSeconds = 300},
     recreation = {label = 'Recreation', durationSeconds = 90, cooldownSeconds = 180},
-    rehabilitation = {label = 'Rehabilitation Activity', durationSeconds = 120, cooldownSeconds = 300}
+    rehabilitation = {label = 'Rehabilitation Activity', durationSeconds = 120, cooldownSeconds = 300},
+    swimming = {label = 'Supervised Swimming', durationSeconds = 180, cooldownSeconds = 300},
+    tennis = {label = 'Tennis', durationSeconds = 180, cooldownSeconds = 300},
+    yoga = {label = 'Outdoor Yoga', durationSeconds = 150, cooldownSeconds = 240},
+    meditation = {label = 'Garden Meditation', durationSeconds = 120, cooldownSeconds = 180},
+    gardening = {label = 'Gardening', durationSeconds = 180, cooldownSeconds = 240},
+    raking = {label = 'Groundskeeping', durationSeconds = 150, cooldownSeconds = 240},
+    laundry = {label = 'Laundry Duties', durationSeconds = 180, cooldownSeconds = 240},
+    foodprep = {label = 'Kitchen Food Preparation', durationSeconds = 180, cooldownSeconds = 240},
+    dishwashing = {label = 'Dishwashing', durationSeconds = 120, cooldownSeconds = 180},
+    restocking = {label = 'Cafeteria Restocking', durationSeconds = 180, cooldownSeconds = 240},
+    cleaning = {label = 'Facility Cleaning', durationSeconds = 150, cooldownSeconds = 240}
 }
 -- Activity coordinates remain unset until the Parsons MLO is mapped.
 -- No activity reduces a hold or grants money/items.
