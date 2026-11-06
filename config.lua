@@ -4,6 +4,7 @@ Config.UseTarget = GetConvar('UseTarget', 'false') == 'true' -- Use qb-target in
 -- Parsons patient activities will be defined here as they are designed.
 -- No prison electrician work or sentence-reduction jobs.
 Config.Jobs = {}
+Config.EscapeDetectionRadius = 200.0 -- Placeholder until Parsons MLO perimeter is mapped
 
 Config.Uniforms = {
     ['male'] = {
@@ -31,7 +32,8 @@ Config.PatientUniformsEnabled = false -- Preserve original prison uniform settin
 -- Original qb-prison coordinates retained as placeholders until Parsons MLO positions are provided.
 -- Do not treat these as final Parsons coordinates.
 Config.Locations = {
-    freedom = vector4(1740.88, 2476.57, 44.85, 299.49),
+    freedom = vector4(1740.88, 2476.57, 44.85, 299.49), -- upstream placeholder
+    desk = vector4(1740.88, 2476.57, 44.85, 299.49), -- Parsons reception placeholder
     outside = vector4(1848.13, 2586.05, 44.67, 269.5),
     yard = vector4(1765.67, 2565.91, 44.56, 1.5),
     middle = vector4(1693.33, 2569.51, 44.55, 123.5),
