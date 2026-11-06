@@ -10,6 +10,8 @@ Config.Jobs = {
 }
 -- Activity coordinates remain unset until the Parsons MLO is mapped.
 -- No activity reduces a hold or grants money/items.
+Config.EscapeRoomGraceHours = 48 -- Real-world hours away before an escaped patient's room may be reassigned
+Config.PatientRooms = {} -- Map actual room identifiers and door access after inspecting Parsons MLO
 Config.FacilityZone = { points = {}, minZ = nil, maxZ = nil } -- Parsons PolyZone coordinates pending
 Config.EscapeDetectionRadius = 200.0 -- Legacy prison radius; replace with validated facility polygon
 
