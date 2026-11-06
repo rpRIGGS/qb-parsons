@@ -2,6 +2,7 @@ local QBCore = exports['qb-core']:GetCoreObject({'Functions'})
 local admitted = false
 local hold = nil
 local deskPed = nil
+local refreshSerial = 0
 
 local function TransferTo(coords)
     DoScreenFadeOut(500)
@@ -45,13 +46,18 @@ RegisterNetEvent('parsons:client:Discharge', function()
     admitted = false
     hold = nil
     TriggerEvent('parsons:client:AdmissionState', false)
-    TriggerEvent('qb-clothes:loadPlayerSkin')
+    if Config.PatientUniformsEnabled then
+        TriggerEvent('qb-clothing:client:loadPlayerSkin')
+    end
     TransferTo(Config.Locations.outside)
     QBCore.Functions.Notify(Lang:t('success.discharged'), 'success')
 end)
 
 local function RefreshStatus()
+    refreshSerial = refreshSerial + 1
+    local serial = refreshSerial
     QBCore.Functions.TriggerCallback('parsons:server:GetAdmission', function(state)
+        if serial ~= refreshSerial then return end
         if type(state) ~= 'table' or not state.active then
             admitted = false
             hold = nil
@@ -62,7 +68,11 @@ local function RefreshStatus()
         admitted = true
         TriggerEvent('parsons:client:AdmissionState', true)
         -- Rejoin/restart: reuse qb-prison's return-to-facility pattern.
-        if Config.Locations.spawns and #Config.Locations.spawns > 0 then
+        local center = Config.Locations.middle
+        local radius = Config.EscapeDetectionRadius or 200.0
+        local position = GetEntityCoords(PlayerPedId())
+        local alreadyInside = center and #(position.xy - vec2(center.x, center.y)) <= radius
+        if not alreadyInside and Config.Locations.spawns and #Config.Locations.spawns > 0 then
             TransferTo(Config.Locations.spawns[math.random(#Config.Locations.spawns)].coords)
         end
     end)
@@ -98,6 +108,7 @@ RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
     SetupDesk()
 end)
 RegisterNetEvent('QBCore:Client:OnPlayerUnload', function()
+    refreshSerial = refreshSerial + 1
     admitted = false
     hold = nil
     TriggerEvent('parsons:client:AdmissionState', false)
