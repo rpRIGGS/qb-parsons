@@ -35,7 +35,7 @@ Config.Security = {
         electrical = {difficulty = {'easy', 'medium', 'medium'}, inputs = {'w', 'a', 's', 'd'}},
         gate = {difficulty = {'medium', 'medium', 'hard'}, inputs = {'w', 'a', 's', 'd'}}
     },
-    aircraft = {enabled = true, verifySeconds = 5, cooldownSeconds = 180},
+    aircraft = {enabled = true, verifySeconds = 5, cooldownSeconds = 180, exemptJobTypes = {'leo', 'ems', 'fire'}},
     monitoring = {incidentCooldownSeconds = 120},
     PSDispatch = {enabled = true, jobs = {'police', 'sheriff', 'state', 'leo'}, codes = {
         security_communications_failure = '10-90', gate_security_compromised = '10-90',
