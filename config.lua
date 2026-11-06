@@ -23,6 +23,10 @@ Config.Jobs = {
 -- No activity reduces a hold or grants money/items.
 Config.EscapeRoomGraceHours = 48 -- Real-world hours away before an escaped patient's room may be reassigned
 Config.PatientRooms = {} -- Map actual room identifiers and door access after inspecting Parsons MLO
+Config.Reception = { coords = nil, ped = 's_m_m_doctor_01' } -- Initial check-in and return to treatment
+Config.GuardShack = { coords = nil, ped = 's_m_m_security_01' } -- Status and authorized checkout
+Config.Arrival = nil -- vector4 inside front gate, never reuse prison spawns
+Config.Release = nil -- vector4 outside Parsons gate
 Config.FacilityZone = { points = {}, minZ = nil, maxZ = nil } -- Parsons PolyZone coordinates pending
 Config.EscapeDetectionRadius = 200.0 -- Legacy prison radius; replace with validated facility polygon
 
@@ -72,5 +76,12 @@ Config.Locations = {
     },
     -- Placeholder for future Parsons therapy, recreation and rehabilitation activity coordinates.
     -- Keep other original prison coordinates above as temporary MLO placeholders.
-    jobs = {}
+    -- Set each activity station to { coords = vector3(...), radius = 4.0 } once mapped.
+    -- nil disables interaction safely; no prison coordinates are substituted.
+    jobs = {
+        swimming = {}, tennis = {}, yoga = {}, meditation = {},
+        gardening = {}, raking = {}, laundry = {}, foodprep = {},
+        dishwashing = {}, restocking = {}, cleaning = {},
+        therapy = {}, recreation = {}, rehabilitation = {}
+    }
 }
