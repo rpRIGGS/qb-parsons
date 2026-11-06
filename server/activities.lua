@@ -24,7 +24,7 @@ end
 local function patient(src)
     local p = QBCore.Functions.GetPlayer(src)
     local h = p and p.PlayerData.metadata and p.PlayerData.metadata.parsons_hold
-    if not p or type(h) ~= 'table' or h.active ~= true then return nil end
+    if not p or type(h) ~= 'table' or h.active ~= true or h.checkedIn ~= true then return nil end
     return p
 end
 local function nearStation(src, id)
