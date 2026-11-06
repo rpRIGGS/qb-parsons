@@ -152,6 +152,7 @@ local function StoreBelongings(Player)
             }
         end
     end
+    table.sort(snapshot, function(a, b) return tonumber(a.slot) < tonumber(b.slot) end)
     Player.Functions.SetMetaData(BELONGINGS_KEY, {
         status = 'storing', items = snapshot, storedAt = os.time()
     })
