@@ -44,40 +44,50 @@ RegisterNetEvent('parsons:server:StartActivity', function(id)
     if (cooldowns[src] and cooldowns[src][id] or 0) > now then return end
     local duration = math.max(10, math.floor(tonumber(def.durationSeconds) or 60))
     nextSessionId = nextSessionId + 1
-    active[src] = {id = id, token = nextSessionId, finishAt = now + duration}
+    active[src] = {id = id, token = nextSessionId, finishAt = now + duration, durationSeconds = duration}
     sendStatus(src, active[src])
 end)
+local function complete(src, session)
+    if active[src] ~= session then return end
+    local Player = patient(src)
+    if not Player or not nearStation(src, session.id) then
+        cancel(src)
+        return
+    end
+    local def = Config.Jobs[session.id]
+    if not def then cancel(src) return end
+    active[src] = nil
+    local hold = Player.PlayerData.metadata.parsons_hold
+    hold.activities = type(hold.activities) == 'table' and hold.activities or {}
+    local history = hold.activities
+    history[#history + 1] = {
+        id = session.id, completedAt = os.time(),
+        durationSeconds = session.durationSeconds
+    }
+    while #history > 100 do table.remove(history, 1) end
+    Player.Functions.SetMetaData('parsons_hold', hold)
+    local relief = math.max(0, math.floor(tonumber(def.stressRelief) or 0))
+    if relief > 0 then
+        local metadata = Player.PlayerData.metadata or {}
+        local stress = math.max(0, tonumber(metadata.stress) or 0)
+        Player.Functions.SetMetaData('stress', math.max(0, stress - relief))
+    end
+    Player.Functions.Save()
+    cooldowns[src] = cooldowns[src] or {}
+    cooldowns[src][session.id] = os.time() + math.max(0, math.floor(tonumber(def.cooldownSeconds) or 0))
+    sendStatus(src, nil)
+    TriggerClientEvent('QBCore:Notify', src, 'Activity completed.', 'success')
+end
+
 RegisterNetEvent('parsons:server:FinishActivity', function(id, token)
     local src = source
     local session = active[src]
     if not session or session.id ~= id or session.token ~= token then return end
-    if not patient(src) or not nearStation(src, id) then
-        cancel(src)
-        return
-    end
     if os.time() < session.finishAt then
-        -- Client and server clocks can disagree at the finish boundary.
-        -- Resync instead of leaving the activity stuck indefinitely.
         sendStatus(src, session)
         return
     end
-    active[src] = nil
-    -- Participation history belongs to this admission, not a global player counter.
-    local Player = patient(src)
-    if Player then
-        local hold = Player.PlayerData.metadata.parsons_hold
-        hold.activities = type(hold.activities) == 'table' and hold.activities or {}
-        local history = hold.activities
-        history[#history + 1] = {id = id, completedAt = os.time(), durationSeconds = math.max(10, math.floor(tonumber(Config.Jobs[id].durationSeconds) or 60))}
-        -- Bound metadata growth for long court commitments.
-        while #history > 100 do table.remove(history, 1) end
-        Player.Functions.SetMetaData('parsons_hold', hold)
-        Player.Functions.Save()
-    end
-    cooldowns[src] = cooldowns[src] or {}
-    cooldowns[src][id] = os.time() + math.max(0, math.floor(tonumber(Config.Jobs[id].cooldownSeconds) or 0))
-    sendStatus(src, nil)
-    TriggerClientEvent('QBCore:Notify', src, 'Activity completed.', 'success')
+    complete(src, session)
 end)
 RegisterNetEvent('parsons:server:RequestActivityStatus', function()
     local src = source
@@ -104,6 +114,8 @@ CreateThread(function()
         for src, session in pairs(active) do
             if not patient(src) or not nearStation(src, session.id) then
                 cancel(src)
+            elseif os.time() >= session.finishAt then
+                complete(src, session)
             end
         end
     end
