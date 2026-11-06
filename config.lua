@@ -3,7 +3,13 @@ Config.UseTarget = GetConvar('UseTarget', 'false') == 'true' -- Use qb-target in
 
 -- Parsons patient activities will be defined here as they are designed.
 -- No prison electrician work or sentence-reduction jobs.
-Config.Jobs = {}
+Config.Jobs = {
+    therapy = {label = 'Therapy Session', durationSeconds = 120, cooldownSeconds = 300},
+    recreation = {label = 'Recreation', durationSeconds = 90, cooldownSeconds = 180},
+    rehabilitation = {label = 'Rehabilitation Activity', durationSeconds = 120, cooldownSeconds = 300}
+}
+-- Activity coordinates remain unset until the Parsons MLO is mapped.
+-- No activity reduces a hold or grants money/items.
 Config.EscapeDetectionRadius = 200.0 -- Placeholder until Parsons MLO perimeter is mapped
 
 Config.Uniforms = {
