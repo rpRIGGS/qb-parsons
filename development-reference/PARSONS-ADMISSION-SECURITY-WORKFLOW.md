@@ -72,3 +72,14 @@ A patient who previously completed reception check-in does NOT repeat intake whe
 ## Room reservation on unauthorized absence
 
 Approved: 48 real-world hours, configurable as Config.EscapeRoomGraceHours. An escaped patient retains their reserved room during that grace period. Once the absence exceeds 48 hours, the room can be released and door access revoked, while the commitment, belongings and participation history remain. At reception, Return to Treatment restores patient clothing and assigns the old room if vacant, otherwise another available room. If no room is free, staff must resolve capacity; no double-booking. Re-entry resumes treatment time without requiring a new admission. Persist the departure timestamp across disconnects and restarts. Actual room and doorlock integration remains pending MLO identifiers and API verification.
+
+## Revised stage sequence — 2026-11-06
+
+- Stages 1–4: commitment and belongings foundations exist, but admission must move to a two-phase pending-arrival and reception-check-in workflow. Do not call the entire workflow complete.
+- Stage 5: safeguards written; live FiveM testing remains pending.
+- Stage 6 (current): activities and participation foundations. Activity finish resync corrected; recreation and occupational activity definitions added. Station coordinates, animation integration, participation history, and live tests remain.
+- Stage 7: perimeter and unauthorized-departure PolyZone foundations committed. Gate breach adaptation, security response, and recovery remain.
+- Stage 8: reception, return-to-treatment, 48-hour room grace, room/bed allocation, patient clothing, door access, guard-shack checkout, cafeteria, and facility operations. The 48-hour absence tracking exists but room release and reassignment are not operational yet.
+- Stage 9: qb-ambulancejob, SAMS.net, SADOJ.net, qb-spawn, and prescription-system integration after checking installed APIs.
+
+Development order: complete Stage 6 non-MLO logic; implement pending admission and reception as prerequisite for playable time; finish Stage 7 recovery and Stage 8 room and staff flows; then Stage 9 integrations and comprehensive tests. Never claim old prison coordinates are usable Parsons locations.
