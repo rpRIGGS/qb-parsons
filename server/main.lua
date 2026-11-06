@@ -209,6 +209,9 @@ RegisterNetEvent('parsons:server:RequestDischargeStatus', function()
     local src = source
     local Player = GetPlayer(src)
     if not Player then return end
+    local desk = Config.Locations.desk
+    local ped = GetPlayerPed(src)
+    if not desk or ped == 0 or #(GetEntityCoords(ped) - vec3(desk.x, desk.y, desk.z)) > 5.0 then return end
     local hold = TickHold(Player)
     if not hold then
         TriggerClientEvent('QBCore:Notify', src, Lang:t('error.no_active_hold'), 'error')
