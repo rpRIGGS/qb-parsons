@@ -24,4 +24,7 @@ client_scripts {
     'client/prisonbreak.lua'
 }
 
-server_script 'server/main.lua'
+server_scripts {
+    'server/main.lua',
+    'server/activities.lua'
+}
