@@ -25,8 +25,10 @@
 - [ ] Cafeteria shop/food pickup and staff interaction positions.
 
 ## 4. Installed integrations to verify
-- [ ] Confirm PS Dispatch installed version; optional `Config.Security.PSDispatch.enabled` defaults to true. Review dispatch codes and law-enforcement job filters.
-- [ ] Confirm the gate doorlock export/event actually used on the development server.
+- [x] Reference fork identified: `rpRIGGS/PowerMoves-PSDispatch`; verified `client/alerts.lua` exports `CustomAlert` with `coords`, `dispatchCode`, `code`, `jobs`, `priority`, `sprite`, and `length`. `Config.Security.PSDispatch.enabled` is true.
+- [ ] Verify that the development server is running this fork under resource name `ps-dispatch`, and check actual law-enforcement job filters/codes in-game.
+- [x] Checked upstream qb-doorlock `server.lua`: `qb-doorlock:server:updateState` is available with `sentSource` and `unlockAnyway` arguments; Parsons adapter uses it.
+- [ ] Verify installed server doorlock fork and gate IDs in-game.
 - [ ] Verify the installed `ox_lib` version supports `lib.skillCheck` and test configured electrical/gate difficulties in-game (the skill-check integration is already coded).
 - [ ] Confirm actual QBCore items `electronickit` and `gatecrack` are available in the installed customized qb-inventory.
 - [ ] For Stage 9, confirm qb-ambulancejob, SAMS.net, SADOJ.net and qb-spawn interfaces.
@@ -48,3 +50,7 @@ No new architectural decisions, second PolyZone, NPC security department, or ext
 - `electronickit` and `gatecrack` use ox_lib skill checks. Server validates action token, elapsed time, inventory and proximity, and acknowledges the applied result. A client skill-check result cannot be independently proven by the server; do not describe it as cheat-proof.
 - Gate relock retries when a doorlock resource or player is temporarily unavailable; best-effort relock is attempted on Parsons resource stop. Unexpected process crashes/restarts and installed qb-doorlock variations still need live testing and operational recovery procedures.
 - **Stage 7 code milestone is complete; runtime acceptance is not.** Before enabling mapped interactions in production: supply actual gate door IDs and Parsons MLO positions, test dispatch/doorlock/aircraft behavior in FiveM, and verify recovery after disconnects/restarts. Next source-development focus is the approved Stages 1–4 admission/reception/checkout refactor, not Stage 8.
+
+## Approved decisions already applied
+
+The following are **not** open design placeholders: Gruppe Sechs reporting identity, PS Dispatch adapter, `electronickit` electrical item, `gatecrack` hacking item, ox_lib skill checks, qb-target interaction support, one property polygon, no automatic power-outage gate opening, and 48-hour room reservation grace. Source values are already present in `config.lua`. Do not ask for these decisions again.
