@@ -83,3 +83,7 @@ Approved: 48 real-world hours, configurable as Config.EscapeRoomGraceHours. An e
 - Stage 9: qb-ambulancejob, SAMS.net, SADOJ.net, qb-spawn, and prescription-system integration after checking installed APIs.
 
 Development order: complete Stage 6 non-MLO logic; implement pending admission and reception as prerequisite for playable time; finish Stage 7 recovery and Stage 8 room and staff flows; then Stage 9 integrations and comprehensive tests. Never claim old prison coordinates are usable Parsons locations.
+
+## Stage 6 code checkpoint
+
+The activity subsystem now uses server-side completion, validates the patient's active checked-in hold and station proximity, maintains per-admission participation history (last 100 completions), enforces cooldowns, and supports optional configured stress relief. All activity station coordinates remain deliberately unmapped. Stage 6 cannot be considered live-verified until the facility is mapped and the FiveM runtime is tested. Future presentation work may add activity-specific animations and props without changing server authority.
