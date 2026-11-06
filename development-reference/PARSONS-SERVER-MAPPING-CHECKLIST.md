@@ -39,3 +39,5 @@ No new architectural decisions, second PolyZone, NPC security department, or ext
 - Front security gate guard: **Gruppe Sechs** uniform/NPC; confirm suitable Rockstar ped model in-game.
 - Parsons police alerts: **Gruppe Sechs** is the reporting security company, via optional PS Dispatch. No legacy dispatch fallback.
 - The security minigames use `ox_lib` (not an additional hacking resource); no new sabotage items are required.
+
+**Stage 7 gate adapter update (2026-11-06):** `Config.Security.gate.doorIds = {}` is deliberately empty until actual Parsons gate door IDs are mapped. On verified gate compromise, `server/security.lua` now invokes the upstream `qb-doorlock:server:updateState` API to unlock configured IDs and requests relock on expiry; electrical outages do not unlock gates. The installed doorlock fork/API, permission behavior, disconnect/restart edge cases and live relock behavior require in-server verification before operational signoff.
