@@ -27,7 +27,58 @@ Config.Reception = { coords = nil, ped = 's_m_m_doctor_01' } -- Initial check-in
 Config.GuardShack = { coords = nil, ped = 's_m_m_security_01' } -- Status and authorized checkout
 Config.Arrival = nil -- vector4 inside front gate, never reuse prison spawns
 Config.Release = nil -- vector4 outside Parsons gate
-Config.FacilityZone = { points = {}, minZ = nil, maxZ = nil } -- Parsons PolyZone coordinates pending
+Config.FacilityZone = { -- Parsons PolyZone export, 2026-11-06; adjust vertical limits after devPoly inspection
+    points = {
+        vector2(-1484.771484375, 880.91412353516),
+        vector2(-1474.4055175781, 873.27014160156),
+        vector2(-1469.2403564453, 849.04193115234),
+        vector2(-1464.9094238281, 831.99353027344),
+        vector2(-1461.7163085938, 820.06103515625),
+        vector2(-1481.4152832031, 811.54919433594),
+        vector2(-1485.1281738281, 803.78729248047),
+        vector2(-1489.724609375, 796.67309570312),
+        vector2(-1503.4226074219, 795.58917236328),
+        vector2(-1515.5177001953, 790.4970703125),
+        vector2(-1527.3354492188, 784.97692871094),
+        vector2(-1539.8552246094, 773.03704833984),
+        vector2(-1550.0793457031, 767.38714599609),
+        vector2(-1569.3668212891, 758.40814208984),
+        vector2(-1585.2768554688, 750.65399169922),
+        vector2(-1592.5657958984, 747.09399414062),
+        vector2(-1600.3880615234, 743.90753173828),
+        vector2(-1608.96875, 744.81005859375),
+        vector2(-1616.2114257812, 749.19097900391),
+        vector2(-1623.3607177734, 764.51098632812),
+        vector2(-1619.4779052734, 771.78015136719),
+        vector2(-1612.2801513672, 776.40509033203),
+        vector2(-1601.6477050781, 784.32159423828),
+        vector2(-1598.271484375, 791.90173339844),
+        vector2(-1599.2530517578, 800.59069824219),
+        vector2(-1604.5662841797, 812.10699462891),
+        vector2(-1610.1090087891, 823.87829589844),
+        vector2(-1611.4516601562, 832.22198486328),
+        vector2(-1608.3409423828, 839.87933349609),
+        vector2(-1594.3450927734, 850.01013183594),
+        vector2(-1587.5551757812, 854.97967529297),
+        vector2(-1575.01171875, 864.28051757812),
+        vector2(-1567.6286621094, 869.5263671875),
+        vector2(-1561.5709228516, 875.55041503906),
+        vector2(-1556.9174804688, 882.98181152344),
+        vector2(-1551.1197509766, 889.45574951172),
+        vector2(-1543.6918945312, 893.67694091797),
+        vector2(-1535.2485351562, 895.80688476562),
+        vector2(-1527.3529052734, 899.17291259766),
+        vector2(-1519.8433837891, 903.93707275391),
+        vector2(-1514.6456298828, 911.31213378906),
+        vector2(-1507.9565429688, 915.60394287109),
+        vector2(-1500.4440917969, 913.36938476562),
+        vector2(-1493.5648193359, 908.56506347656),
+        vector2(-1487.1324462891, 902.77062988281),
+        vector2(-1482.3350830078, 895.85711669922),
+    },
+    minZ = 181.31428527832,
+    maxZ = 189.31729125977
+}
 -- Stage 7: one fenced-property polygon for patient eligibility and low-aircraft detection.
 -- maxZ is also the aircraft alert ceiling; minZ is the property floor.
 Config.Security = {
