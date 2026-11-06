@@ -55,6 +55,10 @@ RegisterNetEvent('parsons:client:ActivityStatus', function(activity)
                 QBCore.Functions.Notify('Activity cancelled: you left the station.', 'error')
                 return
             end
+            if activityScenario and not IsPedUsingAnyScenario(PlayerPedId()) then
+                TriggerServerEvent('parsons:server:CancelActivity')
+                return
+            end
             if IsControlJustReleased(0, 177) then
                 TriggerServerEvent('parsons:server:CancelActivity')
                 return
