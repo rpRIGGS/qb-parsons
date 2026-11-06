@@ -24,6 +24,29 @@ local function GetHold(Player)
     return NormalizeHold(Player.PlayerData.metadata and Player.PlayerData.metadata[METADATA_KEY])
 end
 
+-- Polygon verification uses server-observed player coordinates; client zone events are hints only.
+local function InsideFacility(src)
+    local zone = Config.FacilityZone
+    if type(zone) ~= 'table' or type(zone.points) ~= 'table' or #zone.points < 3
+        or type(zone.minZ) ~= 'number' or type(zone.maxZ) ~= 'number' then return false end
+    local ped = GetPlayerPed(src)
+    if not ped or ped == 0 then return false end
+    local pos = GetEntityCoords(ped)
+    if pos.z < zone.minZ or pos.z > zone.maxZ then return false end
+    local inside, j = false, #zone.points
+    for i = 1, #zone.points do
+        local a, b = zone.points[i], zone.points[j]
+        if type(a.x) ~= 'number' or type(a.y) ~= 'number'
+            or type(b.x) ~= 'number' or type(b.y) ~= 'number' then return false end
+        if (a.y > pos.y) ~= (b.y > pos.y) then
+            local crossX = (b.x - a.x) * (pos.y - a.y) / (b.y - a.y) + a.x
+            if pos.x < crossX then inside = not inside end
+        end
+        j = i
+    end
+    return inside
+end
+
 local function TickHold(Player)
     local src = Player.PlayerData.source
     local now = os.time()
@@ -31,6 +54,7 @@ local function TickHold(Player)
     lastTick[src] = now
     local hold = GetHold(Player)
     if not hold or hold.remainingSeconds == nil or not previous then return hold end
+    if hold.checkedIn ~= true or not InsideFacility(src) then return hold end
     -- Cap long scheduler gaps to avoid counting downtime or lag as treatment time.
     local elapsed = math.max(0, math.min(now - previous, 35))
     if elapsed == 0 then return hold end
@@ -297,13 +321,10 @@ RegisterNetEvent('parsons:server:ReportUnauthorizedDeparture', function()
     local src = source
     local Player = GetPlayer(src)
     if not Player or not GetHold(Player) then return end
-    local center = Config.Locations.middle
-    local radius = Config.EscapeDetectionRadius or 200.0
-    if not center or radius <= 0 then return end
-    local ped = GetPlayerPed(src)
-    if not ped or ped == 0 then return end
-    local coords = GetEntityCoords(ped)
-    if #(coords.xy - vec2(center.x, center.y)) <= radius then return end
+    local hold = GetHold(Player)
+    if not hold or hold.checkedIn ~= true or InsideFacility(src) then return end
+    local zone = Config.FacilityZone
+    if not zone or not zone.points or #zone.points < 3 then return end
     local now = os.time()
     if departureCooldown[src] and now - departureCooldown[src] < 120 then return end
     departureCooldown[src] = now
@@ -312,7 +333,8 @@ RegisterNetEvent('parsons:server:ReportUnauthorizedDeparture', function()
     TriggerEvent('parsons:server:UnauthorizedDepartureVerified', src, Player.PlayerData.citizenid)
 end)
 
--- Count only connected time. Persist progress in QBCore metadata every 30 seconds.
+-- Count only connected, checked-in time at server-verified Parsons positions.
+-- Until a valid polygon is configured, no treatment time is deducted.
 -- The first tick after reconnect initializes the clock; offline gaps never subtract.
 CreateThread(function()
     while true do
