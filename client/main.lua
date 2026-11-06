@@ -25,25 +25,22 @@ end
 -- and admission authorization are Task 3/4; never infer release from a local countdown.
 RegisterNetEvent('parsons:client:Admit', function(state)
     if type(state) ~= 'table' or not state.active then return end
-    if type(Config.Locations.spawns) ~= 'table' or #Config.Locations.spawns == 0 then
-        QBCore.Functions.Notify(Lang:t('error.missing_admission_location'), 'error')
-        return
-    end
     refreshSerial = refreshSerial + 1
     hold = state
     admitted = true
     TriggerEvent('parsons:client:AdmissionState', true)
-    local spawn = Config.Locations.spawns[math.random(#Config.Locations.spawns)]
-    TransferTo(spawn.coords)
-    ApplyPatientClothes()
-    QBCore.Functions.Notify(Lang:t('info.admitted'), 'primary')
+    -- A commitment is pending until reception check-in; no belongings or clothing are changed here.
+    if Config.Arrival then TransferTo(Config.Arrival) end
+    QBCore.Functions.Notify('Commitment recorded. Report to Parsons reception for check-in.', 'primary')
 end)
 
 RegisterNetEvent('parsons:client:Discharge', function()
     -- A server-issued event is not by itself a substitute for authorization;
     -- the server must validate discharge before emitting it.
     if not admitted then return end
-    if not Config.Locations.outside then return end
+    if not Config.Release then
+        QBCore.Functions.Notify('Discharged. Exit location is not mapped; contact staff.', 'primary')
+    end
     refreshSerial = refreshSerial + 1
     admitted = false
     hold = nil
@@ -51,7 +48,7 @@ RegisterNetEvent('parsons:client:Discharge', function()
     if Config.PatientUniformsEnabled then
         TriggerEvent('qb-clothing:client:loadPlayerSkin')
     end
-    TransferTo(Config.Locations.outside)
+    if Config.Release then TransferTo(Config.Release) end
     QBCore.Functions.Notify(Lang:t('success.discharged'), 'success')
 end)
 
@@ -80,11 +77,11 @@ local function RequestDischargeStatus()
 end
 
 local function SetupDesk()
-    if deskPed or not Config.Locations.desk then return end
-    local model = `s_m_m_doctor_01`
+    if deskPed or not Config.Reception or not Config.Reception.coords then return end
+    local model = joaat(Config.Reception.ped or 's_m_m_doctor_01')
     RequestModel(model)
     while not HasModelLoaded(model) do Wait(0) end
-    local pos = Config.Locations.desk
+    local pos = Config.Reception.coords
     deskPed = CreatePed(0, model, pos.x, pos.y, pos.z - 1.0, pos.w, false, true)
     FreezeEntityPosition(deskPed, true)
     SetEntityInvincible(deskPed, true)
@@ -118,7 +115,7 @@ end)
 
 CreateThread(function()
     if Config.UseTarget then return end
-    if not Config.Locations.desk then return end
+    if not Config.Reception or not Config.Reception.coords then return end
     local pos = Config.Locations.desk
     local zone = BoxZone:Create(vector3(pos.x, pos.y, pos.z), 2.75, 2.75, {name='parsons_desk',debugPoly=false})
     local inside = false
