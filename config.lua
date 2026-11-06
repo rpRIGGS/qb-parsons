@@ -9,15 +9,15 @@ Config.Jobs = {
     rehabilitation = {label = 'Rehabilitation Activity', durationSeconds = 120, cooldownSeconds = 300},
     swimming = {label = 'Supervised Swimming', durationSeconds = 180, cooldownSeconds = 300},
     tennis = {label = 'Tennis', durationSeconds = 180, cooldownSeconds = 300},
-    yoga = {label = 'Outdoor Yoga', durationSeconds = 150, cooldownSeconds = 240},
-    meditation = {label = 'Garden Meditation', durationSeconds = 120, cooldownSeconds = 180},
-    gardening = {label = 'Gardening', durationSeconds = 180, cooldownSeconds = 240},
-    raking = {label = 'Groundskeeping', durationSeconds = 150, cooldownSeconds = 240},
+    yoga = {label = 'Outdoor Yoga', durationSeconds = 150, cooldownSeconds = 240, scenario = 'WORLD_HUMAN_YOGA', stressRelief = 3},
+    meditation = {label = 'Garden Meditation', durationSeconds = 120, cooldownSeconds = 180, scenario = 'WORLD_HUMAN_YOGA', stressRelief = 5},
+    gardening = {label = 'Gardening', durationSeconds = 180, cooldownSeconds = 240, scenario = 'WORLD_HUMAN_GARDENER_PLANT'},
+    raking = {label = 'Groundskeeping', durationSeconds = 150, cooldownSeconds = 240, scenario = 'WORLD_HUMAN_GARDENER_LEAF_BLOWER'},
     laundry = {label = 'Laundry Duties', durationSeconds = 180, cooldownSeconds = 240},
     foodprep = {label = 'Kitchen Food Preparation', durationSeconds = 180, cooldownSeconds = 240},
     dishwashing = {label = 'Dishwashing', durationSeconds = 120, cooldownSeconds = 180},
     restocking = {label = 'Cafeteria Restocking', durationSeconds = 180, cooldownSeconds = 240},
-    cleaning = {label = 'Facility Cleaning', durationSeconds = 150, cooldownSeconds = 240}
+    cleaning = {label = 'Facility Cleaning', durationSeconds = 150, cooldownSeconds = 240, scenario = 'WORLD_HUMAN_JANITOR'}
 }
 -- Activity coordinates remain unset until the Parsons MLO is mapped.
 -- No activity reduces a hold or grants money/items.
