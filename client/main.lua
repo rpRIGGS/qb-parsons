@@ -69,14 +69,8 @@ local function RefreshStatus()
         hold = state
         admitted = true
         TriggerEvent('parsons:client:AdmissionState', true)
-        -- Rejoin/restart: reuse qb-prison's return-to-facility pattern.
-        local center = Config.Locations.middle
-        local radius = Config.EscapeDetectionRadius or 200.0
-        local position = GetEntityCoords(PlayerPedId())
-        local alreadyInside = center and #(position.xy - vec2(center.x, center.y)) <= radius
-        if not alreadyInside and Config.Locations.spawns and #Config.Locations.spawns > 0 then
-            TransferTo(Config.Locations.spawns[math.random(#Config.Locations.spawns)].coords)
-        end
+        -- Reconnect must not teleport an escaped patient back into treatment.
+        -- Recovery is performed by staff and verified by the server polygon.
     end)
 end
 
