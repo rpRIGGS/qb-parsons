@@ -87,27 +87,33 @@ end
 
 local function SetupDesk()
     if deskPed or not Config.Reception or not Config.Reception.coords then return end
+    local points = {Config.Reception.coords}
+    for _, point in ipairs(Config.Reception.additionalCoords or {}) do points[#points + 1] = point end
     local model = joaat(Config.Reception.ped or 's_m_m_doctor_01')
     RequestModel(model)
     while not HasModelLoaded(model) do Wait(0) end
-    local pos = Config.Reception.coords
-    deskPed = CreatePed(0, model, pos.x, pos.y, pos.z - 1.0, pos.w, false, true)
-    FreezeEntityPosition(deskPed, true)
-    SetEntityInvincible(deskPed, true)
-    SetBlockingOfNonTemporaryEvents(deskPed, true)
-    TaskStartScenarioInPlace(deskPed, 'WORLD_HUMAN_CLIPBOARD', 0, true)
-    if Config.UseTarget then
-        exports['qb-target']:AddTargetEntity(deskPed, {
-            options = {
-                {icon = 'fas fa-clipboard-check', label = 'Reception check-in',
-                    action = function() TriggerServerEvent('parsons:server:ReceptionCheckIn') end,
-                    canInteract = function() return admitted and hold and (not hold.checkedIn or hold.roomReservationExpired) end},
-                {icon = 'fas fa-clipboard', label = Lang:t('info.check_hold'), action = RequestDischargeStatus,
-                    canInteract = function() return admitted end}
-            },
-            distance = 2.5
-        })
+    deskPed = {}
+    for _, pos in ipairs(points) do
+        local ped = CreatePed(0, model, pos.x, pos.y, pos.z - 1.0, pos.w, false, true)
+        FreezeEntityPosition(ped, true)
+        SetEntityInvincible(ped, true)
+        SetBlockingOfNonTemporaryEvents(ped, true)
+        TaskStartScenarioInPlace(ped, 'WORLD_HUMAN_CLIPBOARD', 0, true)
+        deskPed[#deskPed + 1] = ped
+        if Config.UseTarget then
+            exports['qb-target']:AddTargetEntity(ped, {
+                options = {
+                    {icon = 'fas fa-clipboard-check', label = 'Reception check-in',
+                        action = function() TriggerServerEvent('parsons:server:ReceptionCheckIn') end,
+                        canInteract = function() return admitted and hold and (not hold.checkedIn or hold.roomReservationExpired) end},
+                    {icon = 'fas fa-clipboard', label = Lang:t('info.check_hold'), action = RequestDischargeStatus,
+                        canInteract = function() return admitted end}
+                },
+                distance = 2.5
+            })
+        end
     end
+    SetModelAsNoLongerNeeded(model)
 end
 
 -- Guard interaction is only a UI entry point; the server validates officer duty,
