@@ -3,6 +3,11 @@ local QBCore = exports['qb-core']:GetCoreObject({'Functions'})
 local active = {}
 local cooldowns = {}
 local nextSessionId = 0
+local function cancel(src)
+    if not active[src] then return end
+    active[src] = nil
+    TriggerClientEvent('parsons:client:ActivityStatus', src, false)
+end
 local function patient(src)
     local p = QBCore.Functions.GetPlayer(src)
     local h = p and p.PlayerData.metadata and p.PlayerData.metadata.parsons_hold
@@ -34,8 +39,7 @@ RegisterNetEvent('parsons:server:FinishActivity', function(id, token)
     local session = active[src]
     if not session or session.id ~= id or session.token ~= token then return end
     if not patient(src) or not nearStation(src, id) then
-        active[src] = nil
-        TriggerClientEvent('parsons:client:ActivityStatus', src, false)
+        cancel(src)
         return
     end
     if os.time() < session.finishAt then return end
@@ -47,10 +51,21 @@ RegisterNetEvent('parsons:server:FinishActivity', function(id, token)
 end)
 RegisterNetEvent('parsons:server:CancelActivity', function()
     local src = source
-    active[src] = nil
-    TriggerClientEvent('parsons:client:ActivityStatus', src, false)
+    cancel(src)
 end)
 AddEventHandler('playerDropped', function()
     active[source] = nil
     cooldowns[source] = nil
+end)
+
+-- Server checks are independent of the client's activity timer and cancellation requests.
+CreateThread(function()
+    while true do
+        Wait(3000)
+        for src, session in pairs(active) do
+            if not patient(src) or not nearStation(src, session.id) then
+                cancel(src)
+            end
+        end
+    end
 end)
