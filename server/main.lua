@@ -72,10 +72,12 @@ local function UpdateAbsence(Player, hold, inside)
     if hold.roomId and hold.absentSince and not (hold.transport and hold.transport.active) then
         MarkRoomAbsence(hold.roomId, Player.PlayerData.citizenid, hold.absentSince)
     end
-    if hold.roomId and GetResourceKvpString(RoomKey(hold.roomId)) ~= Player.PlayerData.citizenid then
-        hold.roomReservationExpired = true
-    end
+    local reservationLost = hold.roomId and GetResourceKvpString(RoomKey(hold.roomId)) ~= Player.PlayerData.citizenid
     local changed = false
+    if reservationLost and not hold.roomReservationExpired then
+        hold.roomReservationExpired = true
+        changed = true
+    end
     local signal = nil
     if inside then
         if hold.transport and hold.transport.active then return hold end
@@ -119,7 +121,8 @@ local function TickHold(Player)
     local inside = InsideFacility(src)
     hold = UpdateAbsence(Player, hold, inside)
     lastInside[src] = inside
-    local eligible = hold ~= nil and hold.checkedIn == true and inside and not (hold.transport and hold.transport.active)
+    local eligible = hold ~= nil and hold.checkedIn == true and inside
+        and not hold.roomReservationExpired and not (hold.transport and hold.transport.active)
     lastTick[src] = now
     lastEligible[src] = eligible
     if not hold or hold.remainingSeconds == nil or not previous or not eligible or not previouslyEligible then return hold end
@@ -370,7 +373,30 @@ RegisterNetEvent('parsons:server:ReceptionCheckIn', function()
     local ped = GetPlayerPed(src)
     if not ped or ped == 0 or #(GetEntityCoords(ped) - vec3(point.x, point.y, point.z)) > 4.0 then return end
     local hold = GetHold(Player)
-    if not hold or hold.checkedIn then return end
+    if not hold or (hold.checkedIn and not hold.roomReservationExpired) then return end
+    if hold.checkedIn and hold.roomReservationExpired then
+        local roomId = AssignRoom(Player, hold)
+        if not roomId then
+            TriggerClientEvent('QBCore:Notify', src, 'No available room for reassignment.', 'error')
+            return
+        end
+        if roomLocks[roomId] or RoomOwner(roomId) then return end
+        roomLocks[roomId] = true
+        SetResourceKvp(RoomKey(roomId), Player.PlayerData.citizenid)
+        SetResourceKvpInt(AbsenceKey(roomId), 0)
+        hold.roomId = roomId
+        hold.roomReservationExpired = false
+        hold.absentSince = nil
+        hold.absenceReason = nil
+        SetHold(Player, hold)
+        Player.Functions.Save()
+        roomLocks[roomId] = nil
+        lastTick[src] = os.time()
+        lastEligible[src] = false
+        TriggerClientEvent('parsons:client:ReceptionComplete', src, PublicState(hold))
+        TriggerEvent('parsons:server:RoomAssigned', src, Player.PlayerData.citizenid, roomId)
+        return
+    end
     local roomId = AssignRoom(Player, hold)
     if not roomId then
         TriggerClientEvent('QBCore:Notify', src, 'No available mapped patient room. Contact reception staff.', 'error')
