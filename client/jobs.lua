@@ -20,11 +20,17 @@ RegisterNetEvent('parsons:client:ActivityStatus', function(activity)
     if not activeActivity then return end
     local duration = tonumber(activity.durationSeconds) or 0
     local startedAt = GetGameTimer()
-    QBCore.Functions.Notify((activity.label or 'Activity') .. ' started.', 'primary')
+    QBCore.Functions.Notify((activity.label or 'Activity') .. ' started. Press Backspace to cancel.', 'primary')
     CreateThread(function()
         while serial == sessionId and admitted do
             local elapsed = (GetGameTimer() - startedAt) / 1000
             if elapsed >= duration then break end
+            local station = Config.Locations.jobs and Config.Locations.jobs[activity.id]
+            if station and station.coords and #(GetEntityCoords(PlayerPedId()) - vector3(station.coords.x, station.coords.y, station.coords.z)) > (station.radius or 4.0) then
+                TriggerServerEvent('parsons:server:CancelActivity')
+                QBCore.Functions.Notify('Activity cancelled: you left the station.', 'error')
+                return
+            end
             if IsControlJustReleased(0, 177) then
                 TriggerServerEvent('parsons:server:CancelActivity')
                 return
