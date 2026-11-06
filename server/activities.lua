@@ -66,7 +66,7 @@ local function complete(src, session)
     }
     while #history > 100 do table.remove(history, 1) end
     Player.Functions.SetMetaData('parsons_hold', hold)
-    local relief = math.max(0, math.floor(tonumber(def.stressRelief) or 0))
+    local relief = math.min(20, math.max(0, math.floor(tonumber(def.stressRelief) or 0)))
     if relief > 0 then
         local metadata = Player.PlayerData.metadata or {}
         local stress = math.max(0, tonumber(metadata.stress) or 0)
