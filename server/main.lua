@@ -97,6 +97,42 @@ exports('GetBelongingsStatus', function(targetId)
     return data and data.status or 'none'
 end)
 
+-- Restricted server-only recovery inspection. Staff must compare the custody record
+-- against the actual player inventory before acknowledging a completed recovery.
+exports('GetBelongingsRecord', function(targetId)
+    if not IsTrustedCaller() then return nil, 'untrusted resource' end
+    local Player = GetPlayer(targetId)
+    if not Player then return nil, 'patient offline' end
+    local data = GetBelongings(Player)
+    if not data then return nil, 'no belongings record' end
+    return {
+        status = data.status,
+        storedAt = data.storedAt,
+        returnIndex = data.returnIndex,
+        items = data.items
+    }
+end)
+
+-- This does not grant or remove any items. Only acknowledge after a trusted
+-- staff workflow has manually reconciled the inventory and custody snapshot.
+exports('ConfirmBelongingsReconciled', function(targetId, acknowledged)
+    if not IsTrustedCaller() then return false, 'untrusted resource' end
+    if acknowledged ~= true then return false, 'explicit reconciliation acknowledgement required' end
+    local Player = GetPlayer(targetId)
+    if not Player then return false, 'patient offline' end
+    if GetHold(Player) then return false, 'patient still committed' end
+    local data = GetBelongings(Player)
+    if not data then return false, 'no belongings record' end
+    if data.status ~= 'pending_return' and data.status ~= 'storing' then
+        return false, 'record is not pending reconciliation'
+    end
+    print(('[qb-parsons] Belongings reconciliation acknowledged for %s (previous status: %s)'):format(
+        Player.PlayerData.citizenid, data.status))
+    Player.Functions.SetMetaData(BELONGINGS_KEY, {})
+    Player.Functions.Save()
+    return true
+end)
+
 -- Use standard QBCore player inventory functions supported by qb-inventory.
 -- Persist the custody record BEFORE clearing inventory, so a restart cannot
 -- silently discard the snapshot. Pending states require reconciliation.
