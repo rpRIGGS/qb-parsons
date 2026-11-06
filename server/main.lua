@@ -85,7 +85,7 @@ local BELONGINGS_KEY = 'parsons_belongings'
 local function GetBelongings(Player)
     local data = Player.PlayerData.metadata and Player.PlayerData.metadata[BELONGINGS_KEY]
     if type(data) ~= 'table' then return nil end
-    if data.status ~= 'stored' and data.status ~= 'pending_return' then return nil end
+    if data.status ~= 'stored' and data.status ~= 'pending_return' and data.status ~= 'storing' then return nil end
     return data
 end
 
@@ -112,9 +112,14 @@ local function StoreBelongings(Player)
         end
     end
     Player.Functions.SetMetaData(BELONGINGS_KEY, {
-        status = 'stored', items = snapshot, storedAt = os.time()
+        status = 'storing', items = snapshot, storedAt = os.time()
     })
+    Player.Functions.Save()
     Player.Functions.ClearInventory()
+    Player.Functions.Save()
+    local data = GetBelongings(Player)
+    data.status = 'stored'
+    Player.Functions.SetMetaData(BELONGINGS_KEY, data)
     Player.Functions.Save()
     return true
 end
@@ -123,18 +128,21 @@ local function ReturnBelongings(Player)
     local data = GetBelongings(Player)
     if not data then return true end
     if GetHold(Player) then return false, 'patient still committed' end
-    if data.status == 'pending_return' then return false, 'return requires reconciliation' end
+    if data.status ~= 'stored' then return false, 'belongings require reconciliation' end
     -- Mark pending before restoration. A partial failure must never cause
     -- the full snapshot to be issued again automatically.
     data.status = 'pending_return'
     Player.Functions.SetMetaData(BELONGINGS_KEY, data)
     Player.Functions.Save()
-    for _, item in ipairs(data.items or {}) do
+    for index, item in ipairs(data.items or {}) do
+        -- Each grant is tracked individually; after a crash, staff must reconcile
+        -- the current item rather than blindly granting the entire snapshot.
+        data.returnIndex = index
+        Player.Functions.SetMetaData(BELONGINGS_KEY, data)
+        Player.Functions.Save()
         local success = Player.Functions.AddItem(item.name, item.amount, item.slot, item.info)
-        if not success then
-            Player.Functions.Save()
-            return false, 'partial return: staff reconciliation required'
-        end
+        Player.Functions.Save()
+        if not success then return false, 'partial return: staff reconciliation required' end
     end
     Player.Functions.SetMetaData(BELONGINGS_KEY, {})
     Player.Functions.Save()
