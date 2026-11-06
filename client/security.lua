@@ -25,10 +25,11 @@ RegisterNetEvent('parsons:security:StartAction', function(key, token)
     busy = false
     if not success then
         lib.notify({title = 'Security bypass', description = 'Bypass unsuccessful.', type = 'error'})
-    else
-        lib.notify({title = 'Security bypass', description = 'Bypass submitted for verification.', type = 'inform'})
     end
     TriggerServerEvent('parsons:security:FinishAction', key, token, success == true)
+end)
+RegisterNetEvent('parsons:security:ActionResult', function(applied)
+    lib.notify({title = 'Security bypass', description = applied and 'Security system bypassed.' or 'Security bypass rejected.', type = applied and 'success' or 'error'})
 end)
 CreateThread(function()
     Wait(1000)
