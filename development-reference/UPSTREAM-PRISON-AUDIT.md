@@ -26,11 +26,11 @@
 | `qb-parsons/server/main.lua` | `prison:server:SetJailStatus`, `SaveJailItems`, `GiveJailItems`, `ResetJailItems`, lockdown, alarms, contraband and `injail` metadata | Namespaced Parsons admissions, belongings and incident state |
 | `qb-parsons/locales/en.lua` | Prison and jail text | Rewrite every user-visible string in patient-centered language |
 | `qb-parsons/locales/*.lua` | Additional locale translations | Audit all supported languages; avoid stale prison messages |
-| `qb-policejob/server/interactions.lua` | LEO-only criminal jail event | Add **separate** Parsons referral/custody request, preserve jail |
-| `qb-policejob/client/interactions.lua` | Jail-time dialog and server request | Add separate Parsons request UX; not a prison sentence field |
+| `qb-policejob/server/interactions.lua` | LEO-only criminal jail event | **Do not modify qb-policejob**; Parsons commands belong in qb-ambulancejob |
+| `qb-policejob/client/interactions.lua` | Jail-time dialog and server request | **Do not modify qb-policejob**; reuse flow concept in qb-ambulancejob |
 | `qb-policejob/client/main.lua` | Jail transport event | Do not reuse prison:client:Enter for Parsons |
-| `qb-policejob/server/commands.lua` | LEO /jail and /unjail | Preserve criminal incarceration; Parsons should use qb-target/menu workflow |
-| `qb-policejob/locales/en.lua` | Jail command labels and sentence notifications | Keep original jail labels for jail; add distinct Parsons labels where needed |
+| `qb-policejob/server/commands.lua` | LEO /jail and /unjail | **Do not modify qb-policejob**; `/commit` and `/uncommit` belong in qb-ambulancejob |
+| `qb-policejob/locales/en.lua` | Jail command labels and sentence notifications | **Do not modify qb-policejob**; Parsons labels belong in Parsons/ambulancejob |
 | `qb-ambulancejob/client/main.lua` | Re-enters jail after hospital bed release | Preserve jail continuity; add distinct patient transport/handoff later |
 | `qb-core/config.lua` | Criminal metadata defaults | Keep unchanged for prison; create separate Parsons patient/hold storage |
 
@@ -75,3 +75,38 @@ California Welfare and Institutions Code section 5150 permits peace officers and
 - California statutory reference: https://codes.findlaw.com/ca/welfare-and-institutions-code/wic-sect-5150/
 
 **Status:** Initial targeted upstream audit, not a claim of exhaustive repository-wide grep or completed integration.
+
+## Task 1 complete — direct source-code audit (2026-11-06)
+
+**Audited the actual current fork**: `fxmanifest.lua`, `config.lua`, `client/main.lua`, `client/jobs.lua`, `client/prisonbreak.lua`, `server/main.lua`, and `locales/en.lua`. This is a code-level audit, not an implementation or runtime test. The files still contain original prison gameplay.
+
+### Reuse rather than rewrite
+
+- `client/main.lua`: Keep the working fade-out, choose configured spawn, teleport, heading, optional clothing, fade-in sequence. Rename and adapt admission/discharge entry points; do not keep the `prison:client:Enter` event for Parsons.
+- `client/main.lua`: Reuse the front-desk target/zone interaction pattern, but it must request **server-authorized discharge**; client `jailTime <= 0` must not authorize discharge.
+- `server/main.lua`: Reuse inventory snapshot/clear/restore approach with **separate Parsons belongings** and safe idempotency. Preserve custom `qb-inventory` integration. Do not reuse `jailitems`.
+- `config.lua`: Keep structured spawn and location configuration, replacing prison coordinates only after actual Parsons MLO locations are supplied. Do not guess MLO coordinates.
+- `fxmanifest.lua`: Keep QBCore/locale and required dependency patterns; review module dependencies before removing scripts.
+
+### Conversion blockers discovered
+
+1. **Client controls criminal metadata:** `prison:server:SetJailStatus` directly accepts a client-supplied time and writes `injail`; client can also request `GiveJailItems`. Parsons needs server-authoritative admission, expiry and discharge with separate state. Never expose a client event that can freely set or clear a hold.
+2. **Prison timer is online-only:** `client/main.lua` subtracts one minute every 60 seconds and saves remaining minutes. Replace with server-persisted real-world start/expiry timestamps, real-life day units, and non-expiring judicial status; do not let offline time freeze the hold.
+3. **Job loss is automatic:** `server/main.lua` changes anyone with an active prison sentence to `unemployed`. This is **not** an approved Parsons consequence; do not carry it over.
+4. **Inventory duplication/loss risk:** The current `SaveJailItems` snapshot, `ClearInventory`, and `GiveJailItems` events depend on `injail`, are client-invoked, and restore items without a full transactional guard. Parsons must protect against repeated intake/discharge, disconnects, restarts and unauthorized calls. Do not grant prison's $80 jail money.
+5. **Work reduces sentence:** `client/jobs.lua` calls `jailTime -= math.random(1, 2)` on work completion and may give a phone. Remove time reduction entirely; any later Parsons activities must be treatment/recreation only, not hold reductions.
+6. **Escape clears legal custody:** `client/prisonbreak.lua` resets `inJail` and `jailTime`, triggers `SetJailStatus(0)`, and clears belongings on escape. Parsons escape RP must **not** clear an active medical hold or judicial order. The prison gate coordinates, gate IDs, alarms, and minigames are unrelated to the Parsons MLO; don't migrate them blindly.
+7. **Old prison resource dependencies:** `client/main.lua` calls global `CreateJobBlip` from `client/jobs.lua`, so deleting jobs from `fxmanifest.lua` without first adapting main would break admission. `client/prisonbreak.lua` also defines the prison alarm events used during login. Remove these references together in a controlled conversion.
+8. **Old client-side unjail:** `prison:client:UnjailPerson` handles property return and release client-side. Parsons `/uncommit` must be validated by the server against current hold authority and court orders.
+9. **Old coordinate bug:** `client/prisonbreak.lua` references `Config.Locations['middle'].coords` even though `config.lua` defines `middle` as a direct `vector4`. This is an upstream inconsistency, not a Parsons design to preserve.
+10. **Localization:** `locales/en.lua` includes prison months, sentence reduction, criminal escape and jail front desk messages. Rename into patient/hold/discharge terminology alongside the corresponding code, rather than cosmetically changing strings while old prison flows remain active.
+
+### Approved implementation sequence after audit
+
+- [x] **Task 1:** Inspect source and identify safe reuse and blockers (this audit).
+- [ ] **Task 2:** Convert Parsons-specific naming, configuration, and client admission/discharge flow together; retain prison's working teleport and intake foundation. Do not ship a manifest that calls missing prison jobs or alarm functions.
+- [ ] **Task 3:** Replace online prison minutes with server-authoritative, persisted real-day holds (3/7/28-day total medical windows, court-defined real days, and indefinite judicial status).
+- [ ] **Task 4:** Adapt prison belongings and admission/release mechanics to Parsons state with idempotent, authorized server events; ensure court orders cannot be discharged medically.
+- [ ] **Task 5:** Integrate and test the initial Parsons foundation, then make the completion commit(s). Actual MLO spawn/desk coordinates and PS-MDT authorization contracts are external dependencies, not reasons to invent placeholders as tested locations.
+
+**Transport clarification:** Transport is optional RP **before** `/commit`; the command directly admits the nearby patient. No scripted transport selection or `99999` prison sentence convention. The prison `/jail` and `/unjail` remain untouched.
