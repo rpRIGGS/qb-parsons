@@ -108,3 +108,15 @@ CreateThread(function()
         end
     end
 end)
+
+-- Restricted read-only inspection for future authorized medical staff interface.
+-- The invoking resource must be an explicitly trusted server integration.
+exports('GetPatientActivityHistory', function(targetId)
+    local caller = GetInvokingResource()
+    if caller ~= 'qb-ambulancejob' then return nil, 'untrusted resource' end
+    local Player = QBCore.Functions.GetPlayer(tonumber(targetId))
+    if not Player then return nil, 'patient offline' end
+    local hold = Player.PlayerData.metadata and Player.PlayerData.metadata.parsons_hold
+    if type(hold) ~= 'table' or hold.active ~= true then return nil, 'no active admission' end
+    return type(hold.activities) == 'table' and hold.activities or {}
+end)
