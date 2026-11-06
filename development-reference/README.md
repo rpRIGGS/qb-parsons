@@ -131,3 +131,12 @@ Long-form confidential medical records and court orders can be integrated later;
 - [ ] Test courtroom order -> officer custody -> ambulance request -> Parsons acceptance and admission.
 
 See [INSTALLATION.md](INSTALLATION.md) for dependencies, required changes to the police/ambulance integrations, and the future deployment checklist. **No integration code has been changed yet.**
+
+## Upstream dependency audit
+
+- [ ] Complete the file-by-file prison-reference audit and remove prison-specific language from qb-parsons without breaking actual jail gameplay.
+- [ ] Keep the upstream LEO-only criminal jail permission separate from Parsons clinical hold authorization.
+- [ ] Confirm whether PowerMoves law designates qualified non-psychiatrist hospital physicians to initiate 5150-style holds; never grant authority to every EMS employee automatically.
+- [ ] Keep ambulance transport permissions distinct from clinical hold decisions.
+
+See [UPSTREAM-PRISON-AUDIT.md](UPSTREAM-PRISON-AUDIT.md) for verified upstream paths, English locale keys and outstanding integration work.
