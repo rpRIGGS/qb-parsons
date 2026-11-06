@@ -37,12 +37,15 @@ Config.Security = {
     },
     aircraft = {enabled = true, verifySeconds = 5, cooldownSeconds = 180, exemptJobTypes = {'leo', 'ems', 'fire'}},
     monitoring = {incidentCooldownSeconds = 120},
+    alarm = {durationSeconds = 300, resetJobTypes = {'leo', 'ems'}, resetPoints = {}}, -- map qb-target reset stations at guard shack and medical offices
+    guard = {weapon = 'WEAPON_NIGHTSTICK', respawnSeconds = 300, clearRadius = 35.0, ped = 's_m_m_security_01'}, -- guard shack position pending
+    power = {localOnly = true, restoreSeconds = 300, controllableLights = {}}, -- never invoke global qb-weathersync blackout
     PSDispatch = {enabled = true, jobs = {'police', 'sheriff', 'state', 'leo'}, codes = {
         security_communications_failure = '10-90', gate_security_compromised = '10-90',
         unauthorized_aircraft = '10-66', patient_departure = '10-80', patient_return = '10-80'
     }},
-    electrical = {item = 'electronickit', inside = nil, outside = nil, durationSeconds = 180},
-    gate = {item = 'gatecrack', hack = nil, bypass = nil, doorIds = {}, compromisedSeconds = 120},
+    electrical = {item = 'electronickit', inside = nil, outside = nil, durationSeconds = 300},
+    gate = {item = 'gatecrack', hack = nil, bypass = nil, doorIds = {}, compromisedSeconds = 300},
     -- PS Dispatch is the optional configured police alert adapter; no legacy fallback.
 }
 
