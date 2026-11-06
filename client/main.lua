@@ -89,8 +89,13 @@ local function SetupDesk()
     TaskStartScenarioInPlace(deskPed, 'WORLD_HUMAN_CLIPBOARD', 0, true)
     if Config.UseTarget then
         exports['qb-target']:AddTargetEntity(deskPed, {
-            options = {{icon = 'fas fa-clipboard', label = Lang:t('info.check_hold'), action = RequestDischargeStatus,
-                canInteract = function() return admitted end}},
+            options = {
+                {icon = 'fas fa-clipboard-check', label = 'Reception check-in',
+                    action = function() TriggerServerEvent('parsons:server:ReceptionCheckIn') end,
+                    canInteract = function() return admitted and hold and not hold.checkedIn end},
+                {icon = 'fas fa-clipboard', label = Lang:t('info.check_hold'), action = RequestDischargeStatus,
+                    canInteract = function() return admitted end}
+            },
             distance = 2.5
         })
     end
