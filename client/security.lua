@@ -5,12 +5,16 @@ local actions = {
     {key = 'gate_hack', label = 'Bypass gate electronics', config = function() return Config.Security.gate.hack end}
 }
 local busy = false
+local requesting = false
 local function start(key)
-    if busy then return end
+    if busy or requesting then return end
+    requesting = true
     TriggerServerEvent('parsons:security:BeginAction', key)
+    SetTimeout(3000, function() requesting = false end)
 end
 RegisterNetEvent('parsons:security:StartAction', function(key, token)
     if busy then return end
+    requesting = false
     local label
     for _, entry in ipairs(actions) do if entry.key == key then label = entry.label break end end
     if not label then return end
@@ -19,6 +23,11 @@ RegisterNetEvent('parsons:security:StartAction', function(key, token)
     local spec = key == 'gate_hack' and settings.gate or settings.electrical
     local success = lib.skillCheck(spec.difficulty, spec.inputs)
     busy = false
+    if not success then
+        lib.notify({title = 'Security bypass', description = 'Bypass unsuccessful.', type = 'error'})
+    else
+        lib.notify({title = 'Security bypass', description = 'Bypass submitted for verification.', type = 'inform'})
+    end
     TriggerServerEvent('parsons:security:FinishAction', key, token, success == true)
 end)
 CreateThread(function()
