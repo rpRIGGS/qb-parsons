@@ -25,7 +25,7 @@
 - [ ] Cafeteria shop/food pickup and staff interaction positions.
 
 ## 4. Installed integrations to verify
-- [ ] Confirm PS Dispatch installed version; optional `Config.Security.PSDispatch.enabled` defaults to false. Review dispatch codes and law-enforcement job filters.
+- [ ] Confirm PS Dispatch installed version; optional `Config.Security.PSDispatch.enabled` defaults to true. Review dispatch codes and law-enforcement job filters.
 - [ ] Confirm the gate doorlock export/event actually used on the development server.
 - [ ] Verify the installed `ox_lib` version supports `lib.skillCheck` and test configured electrical/gate difficulties in-game (the skill-check integration is already coded).
 - [ ] Confirm actual QBCore items `electronickit` and `gatecrack` are available in the installed customized qb-inventory.
@@ -41,3 +41,10 @@ No new architectural decisions, second PolyZone, NPC security department, or ext
 - The security minigames use `ox_lib` (not an additional hacking resource); no new sabotage items are required.
 
 **Stage 7 gate adapter update (2026-11-06):** `Config.Security.gate.doorIds = {}` is deliberately empty until actual Parsons gate door IDs are mapped. On verified gate compromise, `server/security.lua` now invokes the upstream `qb-doorlock:server:updateState` API to unlock configured IDs and requests relock on expiry; electrical outages do not unlock gates. The installed doorlock fork/API, permission behavior, disconnect/restart edge cases and live relock behavior require in-server verification before operational signoff.
+
+## Stage 7 code milestone — 2026-11-06
+
+- Source implementation is complete for the **configured** security interactions, server incident reporting, one property polygon, aircraft checks, gate compromise/relock adapter, and PS Dispatch reporting. `Config.Security.PSDispatch.enabled = true` is the approved default, with no legacy policejob fallback.
+- `electronickit` and `gatecrack` use ox_lib skill checks. Server validates action token, elapsed time, inventory and proximity, and acknowledges the applied result. A client skill-check result cannot be independently proven by the server; do not describe it as cheat-proof.
+- Gate relock retries when a doorlock resource or player is temporarily unavailable; best-effort relock is attempted on Parsons resource stop. Unexpected process crashes/restarts and installed qb-doorlock variations still need live testing and operational recovery procedures.
+- **Stage 7 code milestone is complete; runtime acceptance is not.** Before enabling mapped interactions in production: supply actual gate door IDs and Parsons MLO positions, test dispatch/doorlock/aircraft behavior in FiveM, and verify recovery after disconnects/restarts. Next source-development focus is the approved Stages 1–4 admission/reception/checkout refactor, not Stage 8.
