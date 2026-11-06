@@ -120,3 +120,14 @@ Long-form confidential medical records and court orders can be integrated later;
 - Previous Parsons records and credentials notes: https://github.com/rpRIGGS/PowerMoves-PSMDT/blob/main/planning-reference/parsons-sams-integration.md
 
 **Planning only:** No gameplay implementation is implied by this checklist. This file does not authorize work on other repositories.
+
+## Law enforcement, courtroom and medical transport integration
+
+- [ ] Inspect the installed PowerMoves `qb-policejob` and define a separate Parsons admission/transport action for authorized law enforcement personnel; preserve criminal jail operations.
+- [ ] Support judicially ordered commitments initiated by a Division of Law Enforcement officer assigned to courtroom security.
+- [ ] Request ambulance service for medical transport; officer custody coordination and medical transport are distinct responsibilities.
+- [ ] Support legally authorized clinician-initiated holds and hospital referrals without requiring an officer for every admission.
+- [ ] Validate order/hold authority and Parsons intake server-side; do not reuse prison `injail` state or assume job name `police`.
+- [ ] Test courtroom order -> officer custody -> ambulance request -> Parsons acceptance and admission.
+
+See [INSTALLATION.md](INSTALLATION.md) for dependencies, required changes to the police/ambulance integrations, and the future deployment checklist. **No integration code has been changed yet.**
