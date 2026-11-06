@@ -204,6 +204,15 @@ CreateThread(function()
                     if vehicle and vehicle ~= 0 and GetPedInVehicleSeat(vehicle, -1) == ped then
                         local class = GetVehicleClass(vehicle)
                         if class == 15 or class == 16 then
+                            local pilot = QBCore.Functions.GetPlayer(src)
+                            local job = pilot and pilot.PlayerData and pilot.PlayerData.job
+                            local exempt = false
+                            if job and job.onduty then
+                                for _, allowed in ipairs(cfg.exemptJobTypes or {}) do
+                                    if job.type == allowed then exempt = true; break end
+                                end
+                            end
+                            if not exempt then
                             local pos = GetEntityCoords(vehicle)
                             if withinProperty(pos) then
                                 local key = tostring(vehicle)
@@ -220,6 +229,7 @@ CreateThread(function()
                                     })
                                 end
                             end
+                            end -- authorized on-duty emergency pilot exemption
                         end
                     end
                 end
