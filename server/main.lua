@@ -292,6 +292,40 @@ exports('AdmitPatient', function(targetId, kind, phase, days)
     return true
 end)
 
+-- Room reservations are keyed by patient citizen ID; metadata is authoritative across reconnects.
+-- Only configured room identifiers can be assigned. No coordinates or door IDs are invented.
+local function RoomById(id)
+    for _, room in ipairs(Config.PatientRooms or {}) do
+        if type(room) == 'table' and room.id == id then return room end
+    end
+end
+local function FindRoomOccupant(roomId, exceptCitizenId)
+    for _, id in ipairs(QBCore.Functions.GetPlayers()) do
+        local other = GetPlayer(id)
+        if other and other.PlayerData.citizenid ~= exceptCitizenId then
+            local hold = GetHold(other)
+            if hold and hold.checkedIn and hold.roomId == roomId and not hold.roomReservationExpired then
+                return other.PlayerData.citizenid
+            end
+        end
+    end
+    return nil
+end
+local roomLocks = {}
+local function AssignRoom(Player, hold)
+    local citizenid = Player.PlayerData.citizenid
+    if hold.roomId and not hold.roomReservationExpired and RoomById(hold.roomId) then
+        return hold.roomId
+    end
+    for _, room in ipairs(Config.PatientRooms or {}) do
+        if type(room) == 'table' and type(room.id) == 'string' and room.id ~= ''
+            and not roomLocks[room.id] and not FindRoomOccupant(room.id, citizenid) then
+            return room.id
+        end
+    end
+    return nil
+end
+
 -- Reception intake is a distinct phase; server verifies proximity before custody changes.
 -- Room assignment remains blocked until the real mapped room allocator is implemented.
 RegisterNetEvent('parsons:server:ReceptionCheckIn', function()
@@ -303,8 +337,32 @@ RegisterNetEvent('parsons:server:ReceptionCheckIn', function()
     if not ped or ped == 0 or #(GetEntityCoords(ped) - vec3(point.x, point.y, point.z)) > 4.0 then return end
     local hold = GetHold(Player)
     if not hold or hold.checkedIn then return end
-    TriggerClientEvent('QBCore:Notify', src,
-        'Reception intake awaits mapped room allocation; your commitment is preserved and treatment time has not started.', 'primary', 10000)
+    local roomId = AssignRoom(Player, hold)
+    if not roomId then
+        TriggerClientEvent('QBCore:Notify', src, 'No available mapped patient room. Contact reception staff.', 'error')
+        return
+    end
+    if roomLocks[roomId] then return end
+    roomLocks[roomId] = true
+    local stored, err = StoreBelongings(Player)
+    if not stored then
+        roomLocks[roomId] = nil
+        TriggerClientEvent('QBCore:Notify', src, err or 'Belongings storage failed; staff assistance required.', 'error')
+        return
+    end
+    hold.checkedIn = true
+    hold.roomId = roomId
+    hold.roomReservationExpired = false
+    hold.absentSince = nil
+    hold.checkedInAt = os.time()
+    SetHold(Player, hold)
+    Player.Functions.Save()
+    roomLocks[roomId] = nil
+    lastTick[src] = os.time()
+    lastEligible[src] = false
+    TriggerClientEvent('parsons:client:ReceptionComplete', src, PublicState(hold))
+    TriggerEvent('parsons:server:RoomAssigned', src, Player.PlayerData.citizenid, roomId)
+    TriggerClientEvent('QBCore:Notify', src, 'Reception check-in complete. Assigned room: ' .. roomId, 'success')
 end)
 
 -- Extend commitment to 7/28 TOTAL playable days, preserving already-served online time.
