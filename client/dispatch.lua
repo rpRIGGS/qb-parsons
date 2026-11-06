@@ -5,7 +5,9 @@ local labels = {
     gate_security_compromised = 'Gruppe Sechs reports electronic gate tampering at Parsons Rehabilitation Center',
     unauthorized_aircraft = 'Gruppe Sechs reports unauthorized low aircraft over Parsons Rehabilitation Center',
     patient_departure = 'Gruppe Sechs reports confirmed unauthorized patient departure from Parsons',
-    patient_return = 'Gruppe Sechs reports patient returned to Parsons'
+    patient_return = 'Gruppe Sechs reports patient returned to Parsons',
+    guard_assault = 'Gruppe Sechs reports an assault on facility security at Parsons',
+    guard_down = 'Gruppe Sechs reports a security guard down at Parsons'
 }
 RegisterNetEvent('parsons:security:SendDispatch', function(data)
     local cfg = Config.Security and Config.Security.PSDispatch
