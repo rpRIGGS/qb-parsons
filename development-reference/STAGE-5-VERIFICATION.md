@@ -40,3 +40,7 @@ Source: https://github.com/qbcore-fivem/qb-prison/blob/main/server/main.lua
 - Upstream returns belongings with `exports['qb-inventory']:AddItem(src, name, amount, false, info, reason)` and then clears `jailitems` without checking each result.
 - Parsons now calls `Player.ClearInventory()` and `exports['qb-inventory']:AddItem(...)` to match the upstream API. It retains a separate `parsons_belongings` snapshot and checks grant results to avoid silently discarding unreturned items.
 - Confirm the customized PowerMoves qb-inventory accepts the same export signature during development-server testing.
+
+## Cross-stage status clarification (2026-11-06)
+
+Stage 5 remains **not development-server verified**. The approved Stages 1–4 refactor changes the admission lifecycle to pending arrival → reception check-in → assigned room/belongings → authorized guard-shack checkout. Retest all inventory and custody scenarios above against that new lifecycle, not an earlier immediate-admission flow. Stage 7 security incidents must never clear a hold or belongings record. Group security reports are attributed to **Gruppe Sechs**, via optional PS Dispatch. These are dependencies and test notes, not claims of Stage 5 verification.
