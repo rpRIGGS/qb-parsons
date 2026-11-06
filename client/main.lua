@@ -1,329 +1,125 @@
-QBCore = exports['qb-core']:GetCoreObject({ 'Functions' })
-inJail = false
-jailTime = 0
-currentJob = nil
-CellsBlip = nil
-TimeBlip = nil
-ShopBlip = nil
-local insidecanteen = false
-local insidefreedom = false
-local canteen_ped = 0
-local freedom_ped = 0
-local freedom
-local canteen
+local QBCore = exports['qb-core']:GetCoreObject({'Functions'})
+local admitted = false
+local hold = nil
+local deskPed = nil
 
--- Functions
-
---- This will create the blips for the cells, time check and shop
---- @return nil
-local function CreateCellsBlip()
-	if CellsBlip then
-		RemoveBlip(CellsBlip)
-	end
-	CellsBlip = AddBlipForCoord(Config.Locations['yard'].x, Config.Locations['yard'].y, Config.Locations['yard'].z)
-
-	SetBlipSprite(CellsBlip, 238)
-	SetBlipDisplay(CellsBlip, 4)
-	SetBlipScale(CellsBlip, 0.8)
-	SetBlipAsShortRange(CellsBlip, true)
-	SetBlipColour(CellsBlip, 4)
-	BeginTextCommandSetBlipName('STRING')
-	AddTextComponentSubstringPlayerName(Lang:t('info.cells_blip'))
-	EndTextCommandSetBlipName(CellsBlip)
-
-	if TimeBlip then
-		RemoveBlip(TimeBlip)
-	end
-	TimeBlip = AddBlipForCoord(Config.Locations['freedom'].x, Config.Locations['freedom'].y, Config.Locations['freedom'].z)
-
-	SetBlipSprite(TimeBlip, 466)
-	SetBlipDisplay(TimeBlip, 4)
-	SetBlipScale(TimeBlip, 0.8)
-	SetBlipAsShortRange(TimeBlip, true)
-	SetBlipColour(TimeBlip, 4)
-	BeginTextCommandSetBlipName('STRING')
-	AddTextComponentSubstringPlayerName(Lang:t('info.freedom_blip'))
-	EndTextCommandSetBlipName(TimeBlip)
+local function TransferTo(coords)
+    DoScreenFadeOut(500)
+    while not IsScreenFadedOut() do Wait(10) end
+    SetEntityCoords(PlayerPedId(), coords.x, coords.y, coords.z - 0.9, false, false, false, false)
+    SetEntityHeading(PlayerPedId(), coords.w)
+    Wait(500)
+    DoScreenFadeIn(1000)
 end
 
--- Add clothes to prisioner
-
-local function ApplyClothes()
-	local playerPed = PlayerPedId()
-	if DoesEntityExist(playerPed) then
-		Citizen.CreateThread(function()
-			SetPedArmour(playerPed, 0)
-			ClearPedBloodDamage(playerPed)
-			ResetPedVisibleDamage(playerPed)
-			ClearPedLastWeaponDamage(playerPed)
-			ResetPedMovementClipset(playerPed, 0)
-			local gender = QBCore.Functions.GetPlayerData().charinfo.gender
-			if gender == 0 then
-				TriggerEvent('qb-clothing:client:loadOutfit', Config.Uniforms.male)
-			else
-				TriggerEvent('qb-clothing:client:loadOutfit', Config.Uniforms.female)
-			end
-		end)
-	end
+local function ApplyPatientClothes()
+    if not Config.PatientUniformsEnabled then return end
+    local ped = PlayerPedId()
+    if not DoesEntityExist(ped) then return end
+    local gender = QBCore.Functions.GetPlayerData().charinfo.gender
+    TriggerEvent('qb-clothing:client:loadOutfit', gender == 0 and Config.Uniforms.male or Config.Uniforms.female)
 end
 
+-- Server-issued operational state only. The server-side authoritative hold implementation
+-- and admission authorization are Task 3/4; never infer release from a local countdown.
+RegisterNetEvent('parsons:client:Admit', function(state)
+    if type(state) ~= 'table' or not state.active then return end
+    if type(Config.Locations.spawns) ~= 'table' or #Config.Locations.spawns == 0 then
+        QBCore.Functions.Notify(Lang:t('error.missing_admission_location'), 'error')
+        return
+    end
+    hold = state
+    admitted = true
+    local spawn = Config.Locations.spawns[math.random(#Config.Locations.spawns)]
+    TransferTo(spawn.coords)
+    ApplyPatientClothes()
+    QBCore.Functions.Notify(Lang:t('info.admitted'), 'primary')
+end)
 
--- Events
+RegisterNetEvent('parsons:client:Discharge', function()
+    -- A server-issued event is not by itself a substitute for authorization;
+    -- the server must validate discharge before emitting it.
+    if not admitted then return end
+    if not Config.Locations.outside then return end
+    admitted = false
+    hold = nil
+    TriggerEvent('qb-clothes:loadPlayerSkin')
+    TransferTo(Config.Locations.outside)
+    QBCore.Functions.Notify(Lang:t('success.discharged'), 'success')
+end)
+
+local function RefreshStatus()
+    QBCore.Functions.TriggerCallback('parsons:server:GetAdmission', function(state)
+        if type(state) ~= 'table' or not state.active then
+            admitted = false
+            hold = nil
+            return
+        end
+        hold = state
+        admitted = true
+        -- Rejoin/restart: reuse qb-prison's return-to-facility pattern.
+        if Config.Locations.spawns and #Config.Locations.spawns > 0 then
+            TransferTo(Config.Locations.spawns[math.random(#Config.Locations.spawns)].coords)
+        end
+    end)
+end
+
+local function RequestDischargeStatus()
+    if not admitted then return end
+    TriggerServerEvent('parsons:server:RequestDischargeStatus')
+end
+
+local function SetupDesk()
+    if deskPed or not Config.Locations.desk then return end
+    local model = `s_m_m_doctor_01`
+    RequestModel(model)
+    while not HasModelLoaded(model) do Wait(0) end
+    local pos = Config.Locations.desk
+    deskPed = CreatePed(0, model, pos.x, pos.y, pos.z - 1.0, pos.w, false, true)
+    FreezeEntityPosition(deskPed, true)
+    SetEntityInvincible(deskPed, true)
+    SetBlockingOfNonTemporaryEvents(deskPed, true)
+    TaskStartScenarioInPlace(deskPed, 'WORLD_HUMAN_CLIPBOARD', 0, true)
+    if Config.UseTarget then
+        exports['qb-target']:AddTargetEntity(deskPed, {
+            options = {{icon = 'fas fa-clipboard', label = Lang:t('info.check_hold'), action = RequestDischargeStatus,
+                canInteract = function() return admitted end}},
+            distance = 2.5
+        })
+    end
+end
 
 RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
-	QBCore.Functions.GetPlayerData(function(PlayerData)
-		if PlayerData.metadata['injail'] > 0 then
-			TriggerEvent('prison:client:Enter', PlayerData.metadata['injail'])
-		end
-	end)
-
-	QBCore.Functions.TriggerCallback('prison:server:IsAlarmActive', function(active)
-		if active then
-			TriggerEvent('prison:client:JailAlarm', true)
-		end
-	end)
-
-	if DoesEntityExist(canteen_ped) or DoesEntityExist(freedom_ped) then return end
-
-	local pedModel = `s_m_m_armoured_01`
-
-	RequestModel(pedModel)
-	while not HasModelLoaded(pedModel) do
-		Wait(0)
-	end
-
-	freedom_ped = CreatePed(0, pedModel, Config.Locations['freedom'].x, Config.Locations['freedom'].y, Config.Locations['freedom'].z, Config.Locations['freedom'].w, false, true)
-	FreezeEntityPosition(freedom_ped, true)
-	SetEntityInvincible(freedom_ped, true)
-	SetBlockingOfNonTemporaryEvents(freedom_ped, true)
-	TaskStartScenarioInPlace(freedom_ped, 'WORLD_HUMAN_CLIPBOARD', 0, true)
-
-	if not Config.UseTarget then return end
-
-	exports['qb-target']:AddTargetEntity(freedom_ped, {
-		options = {
-			{
-				type = 'client',
-				event = 'prison:client:Leave',
-				icon = 'fas fa-clipboard',
-				label = Lang:t('info.target_freedom_option'),
-				canInteract = function()
-					return inJail
-				end
-			}
-		},
-		distance = 2.5,
-	})
+    RefreshStatus()
+    SetupDesk()
 end)
-
-AddEventHandler('onResourceStart', function(resource)
-	if resource ~= GetCurrentResourceName() then return end
-	Wait(100)
-	if LocalPlayer.state['isLoggedIn'] then
-		QBCore.Functions.GetPlayerData(function(PlayerData)
-			if PlayerData.metadata['injail'] > 0 then
-				TriggerEvent('prison:client:Enter', PlayerData.metadata['injail'])
-			end
-		end)
-	end
-
-	QBCore.Functions.TriggerCallback('prison:server:IsAlarmActive', function(active)
-		if not active then return end
-		TriggerEvent('prison:client:JailAlarm', true)
-	end)
-
-	if DoesEntityExist(canteen_ped) or DoesEntityExist(freedom_ped) then return end
-
-	local pedModel = `s_m_m_armoured_01`
-
-	RequestModel(pedModel)
-	while not HasModelLoaded(pedModel) do
-		Wait(0)
-	end
-
-	freedom_ped = CreatePed(0, pedModel, Config.Locations['freedom'].x, Config.Locations['freedom'].y, Config.Locations['freedom'].z, Config.Locations['freedom'].w, false, true)
-	FreezeEntityPosition(freedom_ped, true)
-	SetEntityInvincible(freedom_ped, true)
-	SetBlockingOfNonTemporaryEvents(freedom_ped, true)
-	TaskStartScenarioInPlace(freedom_ped, 'WORLD_HUMAN_CLIPBOARD', 0, true)
-
-	if not Config.UseTarget then return end
-
-	exports['qb-target']:AddTargetEntity(freedom_ped, {
-		options = {
-			{
-				type = 'client',
-				event = 'prison:client:Leave',
-				icon = 'fas fa-clipboard',
-				label = Lang:t('info.target_freedom_option'),
-				canInteract = function()
-					return inJail
-				end
-			}
-		},
-		distance = 2.5,
-	})
-end)
-
 RegisterNetEvent('QBCore:Client:OnPlayerUnload', function()
-	inJail = false
-	currentJob = nil
-	RemoveBlip(currentBlip)
+    admitted = false
+    hold = nil
 end)
-
-RegisterNetEvent('prison:client:Enter', function(time)
-	local invokingResource = GetInvokingResource()
-	if invokingResource and invokingResource ~= 'qb-policejob' and invokingResource ~= 'qb-ambulancejob' and invokingResource ~= GetCurrentResourceName() then
-		-- Use QBCore.Debug here for a quick and easy way to print to the console to grab your attention with this message
-		TriggerServerEvent('QBCore:DebugSomething', { ('Player with source %s tried to execute prison:client:Enter manually or from another resource which is not authorized to call this, invokedResource: %s'):format(GetPlayerServerId(PlayerId()), invokingResource) })
-		return
-	end
-
-	QBCore.Functions.Notify(Lang:t('error.injail', { Time = time }), 'error')
-
-	TriggerEvent('chat:addMessage', {
-		color = { 3, 132, 252 },
-		multiline = true,
-		args = { 'SYSTEM', Lang:t('info.seized_property') }
-	})
-	DoScreenFadeOut(500)
-	while not IsScreenFadedOut() do
-		Wait(10)
-	end
-	local RandomStartPosition = Config.Locations.spawns[math.random(1, #Config.Locations.spawns)]
-	SetEntityCoords(PlayerPedId(), RandomStartPosition.coords.x, RandomStartPosition.coords.y, RandomStartPosition.coords.z - 0.9, 0, 0, 0, false)
-	SetEntityHeading(PlayerPedId(), RandomStartPosition.coords.w)
-	Wait(500)
-
-	inJail = true
-	jailTime = time
-	local tempJobs = {}
-	local i = 1
-	for k in pairs(Config.Locations.jobs) do
-		tempJobs[i] = k
-		i += 1
-	end
-	currentJob = tempJobs[math.random(1, #tempJobs)]
-	CreateJobBlip(true)
-	ApplyClothes()
-	TriggerServerEvent('prison:server:SetJailStatus', jailTime)
-	TriggerServerEvent('prison:server:SaveJailItems', jailTime)
-	TriggerServerEvent('InteractSound_SV:PlayOnSource', 'jail', 0.5)
-	CreateCellsBlip()
-	Wait(2000)
-	DoScreenFadeIn(1000)
-	QBCore.Functions.Notify(Lang:t('error.do_some_work', { currentjob = Config.Jobs[currentJob] }), 'error')
-end)
-
-RegisterNetEvent('prison:client:Leave', function()
-	if jailTime > 0 then
-		QBCore.Functions.Notify(Lang:t('info.timeleft', { JAILTIME = jailTime }))
-	else
-		jailTime = 0
-		TriggerServerEvent('prison:server:SetJailStatus', 0)
-		TriggerServerEvent('prison:server:GiveJailItems')
-		TriggerEvent('chat:addMessage', {
-			color = { 3, 132, 252 },
-			multiline = true,
-			args = { 'SYSTEM', Lang:t('info.received_property') }
-		})
-		inJail = false
-		RemoveBlip(currentBlip)
-		RemoveBlip(CellsBlip)
-		CellsBlip = nil
-		RemoveBlip(TimeBlip)
-		TimeBlip = nil
-		RemoveBlip(ShopBlip)
-		ShopBlip = nil
-		QBCore.Functions.Notify(Lang:t('success.free_'))
-		DoScreenFadeOut(500)
-		while not IsScreenFadedOut() do
-			Wait(10)
-		end
-		TriggerServerEvent('qb-clothes:loadPlayerSkin')
-		SetEntityCoords(PlayerPedId(), Config.Locations['outside'].x, Config.Locations['outside'].y, Config.Locations['outside'].z, false, false, false, false)
-		SetEntityHeading(PlayerPedId(), Config.Locations['outside'].w)
-		Wait(500)
-		DoScreenFadeIn(1000)
-	end
-end)
-
-RegisterNetEvent('prison:client:UnjailPerson', function()
-	if jailTime > 0 then
-		TriggerServerEvent('prison:server:SetJailStatus', 0)
-		TriggerServerEvent('prison:server:GiveJailItems')
-		TriggerEvent('chat:addMessage', {
-			color = { 3, 132, 252 },
-			multiline = true,
-			args = { 'SYSTEM', Lang:t('info.received_property') }
-		})
-		inJail = false
-		RemoveBlip(currentBlip)
-		RemoveBlip(CellsBlip)
-		CellsBlip = nil
-		RemoveBlip(TimeBlip)
-		TimeBlip = nil
-		RemoveBlip(ShopBlip)
-		ShopBlip = nil
-		QBCore.Functions.Notify(Lang:t('success.free_'))
-		DoScreenFadeOut(500)
-		while not IsScreenFadedOut() do
-			Wait(10)
-		end
-		TriggerServerEvent('qb-clothes:loadPlayerSkin')
-		SetEntityCoords(PlayerPedId(), Config.Locations['outside'].x, Config.Locations['outside'].y, Config.Locations['outside'].z, false, false, false, false)
-		SetEntityHeading(PlayerPedId(), Config.Locations['outside'].w)
-		Wait(500)
-		DoScreenFadeIn(1000)
-	end
-end)
-
--- Threads
-
-CreateThread(function()
-	TriggerEvent('prison:client:JailAlarm', false)
-	while true do
-		local sleep = 1000
-		if jailTime > 0 and inJail then
-			Wait(1000 * 60)
-			sleep = 0
-			if jailTime > 0 and inJail then
-				jailTime -= 1
-				if jailTime <= 0 then
-					jailTime = 0
-					QBCore.Functions.Notify(Lang:t('success.timesup'), 'success', 10000)
-				end
-				TriggerServerEvent('prison:server:SetJailStatus', jailTime)
-			end
-		end
-		Wait(sleep)
-	end
+AddEventHandler('onResourceStart', function(resource)
+    if resource ~= GetCurrentResourceName() then return end
+    Wait(500)
+    if LocalPlayer.state.isLoggedIn then RefreshStatus() end
+    SetupDesk()
 end)
 
 CreateThread(function()
-	if not Config.UseTarget then
-		freedom = BoxZone:Create(vector3(Config.Locations['freedom'].x, Config.Locations['freedom'].y, Config.Locations['freedom'].z), 2.75, 2.75, {
-			name = 'freedom',
-			debugPoly = false,
-		})
-		freedom:onPlayerInOut(function(isPointInside)
-			insidefreedom = isPointInside
-			if isPointInside then
-				CreateThread(function()
-					while insidefreedom do
-						if IsControlJustReleased(0, 38) then
-							exports['qb-core']:KeyPressed()
-							exports['qb-core']:HideText()
-							TriggerEvent('prison:client:Leave')
-							break
-						end
-						Wait(0)
-					end
-				end)
-				exports['qb-core']:DrawText('[E] Check Time', 'left')
-			else
-				exports['qb-core']:HideText()
-			end
-		end)
-	end
+    if Config.UseTarget then return end
+    if not Config.Locations.desk then return end
+    local pos = Config.Locations.desk
+    local zone = BoxZone:Create(vector3(pos.x, pos.y, pos.z), 2.75, 2.75, {name='parsons_desk',debugPoly=false})
+    local inside = false
+    zone:onPlayerInOut(function(entered)
+        inside = entered
+        if entered and admitted then exports['qb-core']:DrawText(Lang:t('info.check_hold_prompt'), 'left')
+        else exports['qb-core']:HideText() end
+    end)
+    while true do
+        if inside and admitted and IsControlJustReleased(0, 38) then
+            exports['qb-core']:KeyPressed()
+            RequestDischargeStatus()
+        end
+        Wait(inside and 0 or 1000)
+    end
 end)
