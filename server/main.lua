@@ -6,6 +6,7 @@ local allowedResources = {['qb-ambulancejob'] = true}
 -- Operational commitment state only. PS-MDT remains the source for medical/legal records.
 -- QBCore metadata persists remaining seconds. Only connected playtime counts.
 local lastTick = {}
+local lastEligible = {}
 local departureCooldown = {}
 local function GetPlayer(id)
     return QBCore.Functions.GetPlayer(tonumber(id))
@@ -51,10 +52,12 @@ local function TickHold(Player)
     local src = Player.PlayerData.source
     local now = os.time()
     local previous = lastTick[src]
-    lastTick[src] = now
+    local previouslyEligible = lastEligible[src] == true
     local hold = GetHold(Player)
-    if not hold or hold.remainingSeconds == nil or not previous then return hold end
-    if hold.checkedIn ~= true or not InsideFacility(src) then return hold end
+    local eligible = hold ~= nil and hold.checkedIn == true and InsideFacility(src)
+    lastTick[src] = now
+    lastEligible[src] = eligible
+    if not hold or hold.remainingSeconds == nil or not previous or not eligible or not previouslyEligible then return hold end
     -- Cap long scheduler gaps to avoid counting downtime or lag as treatment time.
     local elapsed = math.max(0, math.min(now - previous, 35))
     if elapsed == 0 then return hold end
@@ -240,6 +243,7 @@ exports('AdmitPatient', function(targetId, kind, phase, days)
     SetHold(Player, hold)
     Player.Functions.Save()
     lastTick[Player.PlayerData.source] = os.time()
+    lastEligible[Player.PlayerData.source] = false
     TriggerClientEvent('parsons:client:Admit', Player.PlayerData.source, PublicState(hold))
     return true
 end)
@@ -287,6 +291,7 @@ exports('DischargePatient', function(targetId, authority)
     end
     departureCooldown[Player.PlayerData.source] = nil
     lastTick[Player.PlayerData.source] = nil
+    lastEligible[Player.PlayerData.source] = nil
     TriggerClientEvent('parsons:client:Discharge', Player.PlayerData.source)
     return true, returned and nil or ('discharged; belongings pending: ' .. tostring(returnError))
 end)
@@ -348,5 +353,6 @@ end)
 
 AddEventHandler('playerDropped', function()
     lastTick[source] = nil
+    lastEligible[source] = nil
     departureCooldown[source] = nil
 end)
