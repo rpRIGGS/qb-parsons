@@ -3,7 +3,7 @@ game 'gta5'
 lua54 'yes'
 use_fxv2_oal 'yes'
 author 'Kakarot'
-description 'Allows players to be jailed, escape from jail and work in jail'
+description 'PowerMoves RP Parsons Rehabilitation Center admission and discharge foundation'
 version '2.3.0'
 
 shared_scripts {
@@ -20,8 +20,7 @@ client_scripts {
     '@PolyZone/CircleZone.lua',
     '@PolyZone/ComboZone.lua',
     'client/main.lua',
-    'client/jobs.lua',
-    'client/prisonbreak.lua'
+    -- Prison work and prisonbreak are intentionally excluded from Parsons
 }
 
 server_script 'server/main.lua'
