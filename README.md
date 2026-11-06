@@ -107,3 +107,5 @@ The PowerMoves RP-only statement above is a compatibility and project-scope noti
 - [Server mapping and integration checklist](development-reference/PARSONS-SERVER-MAPPING-CHECKLIST.md)
 
 **Security integration:** `ox_lib` is required for current security skill checks. `qb-target` remains the target integration (E-key fallback when target mode is disabled). `ps-dispatch` is optional, controlled by `Config.Security.PSDispatch.enabled`, and has no legacy qb-policejob dispatch fallback. Security reports identify **Gruppe Sechs**; the front-gate security guard is planned as a Gruppe Sechs NPC. Item names and skill-check difficulty are configurable. No MLO coordinates or door IDs have been invented.
+
+**Source terminology update (2026-11-06):** `client/escape.lua` replaces upstream `client/prisonbreak.lua`; `client/activities.lua` replaces `client/jobs.lua`. Activity definitions use `Config.Activities` and stations use `Config.Locations.activities`. The original prison spawn/desk placeholders and remaining admission lifecycle terms are intentionally reserved for the Stages 1–4 conversion; do not deploy them as Parsons coordinates.
