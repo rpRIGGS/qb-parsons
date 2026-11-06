@@ -114,3 +114,7 @@ California Welfare and Institutions Code section 5150 permits peace officers and
 ## Current fork implementation delta (2026-11-06)
 
 The earlier upstream audit sections document the **state at audit time** and should not be read as today's live code inventory. Parsons now has `server/security.lua`, `client/security.lua`, and `client/dispatch.lua`, a configurable facility polygon, `ox_lib` skill checks, and `electronickit`/`gatecrack` requirements. The PS Dispatch adapter is optional and has no legacy policejob fallback; security reports are from **Gruppe Sechs**. The existing qb-policejob criminal jail flow is intentionally untouched. Physical gate qb-doorlock hookup, remaining Stage 7 hardening and runtime verification are pending. Approved order is to finish Stage 7 code, then restructure Stages 1–4 admission/reception/checkout before Stage 8. This addendum supersedes old audit claims that no security implementation exists, but does not erase historical findings.
+
+## Parsons-native module rename (2026-11-06)
+
+The historic upstream paths `client/prisonbreak.lua` and `client/jobs.lua` listed in this audit are **no longer current paths**. The actual fork now loads `client/escape.lua` and `client/activities.lua`. `Config.Jobs` is now `Config.Activities`, and `Config.Locations.jobs` is now `Config.Locations.activities`. Historical audit entries are retained to document the original upstream code.
