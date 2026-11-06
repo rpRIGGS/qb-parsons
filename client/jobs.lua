@@ -1,4 +1,5 @@
 -- Parsons patient activities. Stations remain inactive until MLO coordinates are configured.
+local QBCore = exports['qb-core']:GetCoreObject({'Functions'})
 local admitted = false
 local activeActivity = nil
 local sessionId = 0
@@ -18,7 +19,6 @@ RegisterNetEvent('parsons:client:ActivityStatus', function(activity)
     activeActivity = activity or nil
     if not activeActivity then return end
     local duration = tonumber(activity.durationSeconds) or 0
-    QBCore = QBCore or exports['qb-core']:GetCoreObject({'Functions'})
     QBCore.Functions.Notify((activity.label or 'Activity') .. ' started.', 'primary')
     CreateThread(function()
         Wait(math.max(0, math.floor(duration * 1000)))
