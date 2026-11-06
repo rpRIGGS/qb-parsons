@@ -6,6 +6,7 @@ local sessionId = 0
 
 RegisterNetEvent('parsons:client:AdmissionState', function(value)
     admitted = value == true
+    if admitted then TriggerServerEvent('parsons:server:RequestActivityStatus') end
     if not admitted and activeActivity then
         sessionId = sessionId + 1
         activeActivity = nil
@@ -40,6 +41,10 @@ RegisterNetEvent('parsons:client:ActivityStatus', function(activity)
         if serial ~= sessionId or not admitted then return end
         TriggerServerEvent('parsons:server:FinishActivity', activity.id, activity.token)
     end)
+end)
+
+RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
+    TriggerServerEvent('parsons:server:RequestActivityStatus')
 end)
 
 function GetParsonsActivity()
