@@ -22,7 +22,8 @@ client_scripts {
     'client/main.lua',
     'client/jobs.lua',
     'client/prisonbreak.lua',
-    'client/dispatch.lua'
+    'client/dispatch.lua',
+    'client/security.lua'
 }
 
 server_scripts {
