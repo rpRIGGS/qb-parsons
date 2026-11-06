@@ -10,7 +10,7 @@ Planning checklist for PowerMoves RP Parsons Rehabilitation Center.
 
 ## Patient management
 - [ ] Voluntary admissions and outpatient visits.
-- [ ] Involuntary 72-hour evaluations and judicial commitments.
+- [ ] Involuntary 72-hour evaluations and judicial commitments measured in real-life days.
 - [ ] Real-time holds that persist offline; no activity-based time reduction.
 - [ ] Extensions, discharge authorization and hospital referrals.
 - [ ] Patient rooms, storage, belongings and clothing.
@@ -123,10 +123,10 @@ PS-MDT is the authoritative system for confidential medical and judicial records
 
 - [ ] Integrate new Parsons `/commit` and `/uncommit` commands through the existing PowerMoves `qb-ambulancejob` fork for on-duty `ems` or `leo`; do not modify `qb-policejob`.
 - [ ] Support judicially ordered commitments initiated by a Division of Law Enforcement officer assigned to courtroom security.
-- [ ] Support optional direct transfer, officer transport or EMS/Parsons medical transport; no ambulance is mandatory for every commitment.
+- [ ] Allow optional officer or EMS/Parsons transport through RP before `/commit`; the command itself performs direct admission without a transport menu.
 - [ ] Support legally authorized clinician-initiated holds and hospital referrals without requiring an officer for every admission.
 - [ ] Validate order/hold authority and Parsons intake server-side; do not reuse prison `injail` state or assume job name `police`.
-- [ ] Test direct transfer and optional courtroom order -> officer/medical transport -> Parsons acceptance and admission, including interrupted transports.
+- [ ] Test optional officer/medical transport through RP before `/commit`, followed by direct Parsons admission; no scripted transport mode.
 
 See [INSTALLATION.md](INSTALLATION.md) for the earlier dependency audit (some policejob modification proposals are superseded by the decisions below) and the future deployment checklist. **No integration code has been changed yet.**
 
@@ -139,52 +139,52 @@ See [INSTALLATION.md](INSTALLATION.md) for the earlier dependency audit (some po
 
 See [UPSTREAM-PRISON-AUDIT.md](UPSTREAM-PRISON-AUDIT.md) for verified upstream paths, English locale keys and outstanding integration work.
 
-## Approved commitment and transport architecture (2026-11-06)
+## Approved commitment and admission architecture (2026-11-06; corrected)
 
-These decisions supersede conflicting older planning text in this file and related references. The 2023 PowerMoves 51-50 policy is historical context; a rewritten SADOJ/SAMS policy is still required. The following is approved **gameplay architecture**, not a claim that updated law or code has been published.
+These decisions supersede conflicting earlier planning text in this file and other references. The 2023 PowerMoves 51-50 policy is historical context; the revised SAMS/SADOJ policy remains to be written. **Planning only; not implemented.**
 
-### Commitment types and decision authority
+### Hold types, units and authority
 
-| Type | Duration / expiry | Responsible authority |
+**Parsons uses real-life days and real elapsed time, including offline time and server restarts.** It does not use prison RP months, accelerated prison sentence time, or the prison `99999` (“the 9's”) convention.
+
+| Type | Actual duration | Responsible authority |
 | --- | --- | --- |
-| Emergency involuntary psychiatric evaluation | Up to 72 hours in real elapsed time | Authorized law enforcement officer or appropriately credentialed medical professional may initiate |
-| Extended psychiatric evaluation | Up to seven days **total** from initial hold (72h + up to 96h) | SAMS / appropriately authorized clinicians |
-| Extended psychiatric treatment | Up to 28 days **total** from initial hold | SAMS / appropriately authorized clinicians |
-| Long-term judicial psychiatric commitment | Court-specified term; no 28-day cap | SADOJ |
-| Indefinite or lifetime judicial commitment | No automatic expiration; remains until applicable court order changes | SADOJ |
-| Voluntary residential or outpatient care | Not automatically a custodial hold | Authorized clinical facility process |
+| Emergency psychiatric evaluation | Up to 72 real hours / 3 real days | Authorized LEO or appropriately credentialed medical professional may initiate |
+| Extended evaluation | Up to 7 real days **total** from initial hold | SAMS / appropriately authorized medical personnel |
+| Extended psychiatric treatment | Up to 28 real days **total** from initial hold | SAMS / appropriately authorized medical personnel |
+| Long-term judicial commitment | Court-specified duration in **real days** | SADOJ |
+| Indefinite / lifetime judicial commitment | No expiration timer; release or modification requires appropriate court authorization | SADOJ |
+| Voluntary admission or outpatient treatment | Not automatically a custodial hold | Authorized clinical process |
 
-- SAMS is responsible for medical evaluation and treatment extensions through the 28-day framework; law enforcement does not grant those extensions.
-- SADOJ is responsible for court-ordered long-term, indefinite and lifetime commitments and judicial releases.
-- A SAMS discharge must not override an active SADOJ confinement order. Judicial orders must not be treated as ordinary automatically expiring medical holds.
-- Grade 10 Parsons Psychiatrist may independently evaluate and admit when appropriately credentialed; administrative rank alone is not clinical authority.
-- A person having access to `/commit` or `/uncommit` does not itself prove clinical or legal authorization for every requested action. Define validated permissions, medical decisions and court-order enforcement before implementation.
-- Hold timestamps run on actual elapsed time, including offline time and server restarts. Activities do not reduce them. Preserve any valid extension or court order when a shorter timer expires.
+- SAMS handles medical evaluation and extensions through 28 days; LEO cannot independently extend medical holds.
+- SADOJ controls long-term, indefinite and lifetime judicial commitments, including their modification and release.
+- A SAMS discharge cannot override an active SADOJ confinement order.
+- Parsons Grade 10 Psychiatrist may independently evaluate and admit within appropriate credentials; administrative grade or command access alone is not clinical/legal authorization.
+- Activities do not shorten hold time. Preserve lawful extensions or court orders when an earlier timer expires.
+- For timed holds, persist actual start and expiry timestamps rather than a prison-style online countdown. A legal hold's effective start may precede arrival when transport occurs; define this from the legal authorization, not a transportation menu.
 
-### Admission and transport choices
+### Transport is RP before the command, not a script mode
 
-The original `qb-prison` direct-to-facility transfer is the starting pattern. **Do not require a physical ambulance or vehicle for every commitment.** Support three roleplay choices:
+**Follow the existing PowerMoves prison RP workflow.** Participants may choose to skip physical transportation or roleplay it first, with an officer, EMS or Parsons personnel. Interception, escape, recapture and coordination are handled in the world through RP. Do **not** add a transport selection UI, pending/in-transit state machine or scripted interception system solely for `/commit`.
 
-1. **Direct transfer:** An authorized commitment immediately sends the patient to a configured Parsons intake/spawn location, similar to prison jail processing. Configure appropriate arrival positions/animations later based on the actual MLO.
-2. **Officer transport:** Patient remains in the world while LEO arranges and performs the physical transfer to Parsons; transport can be intercepted through normal RP.
-3. **Medical transport:** EMS or Parsons personnel arrange and perform the physical transfer, likewise allowing RP/interception.
+Once the person is ready to be admitted, an authorized person executes `/commit` near the target, and qb-parsons performs the direct facility transfer and intake using adapted qb-prison foundations. For RP transport, execute `/commit` **after** arrival; for skipped transport, execute it where the patient is. The command must not automatically assume a vehicle was used.
 
-For physical transport, distinguish a **legally initiated hold/order** from **physical admission at Parsons**. Track pending/in-transit/arrived operational states. An interrupted transport or escape must not erase an active commitment or automatically teleport the person to the facility. Reconcile recapture, return, discharge and court/medical changes through the appropriate authorities. Define how the legal clock starts independently of actual arrival so transport cannot arbitrarily lengthen a 72-hour hold.
+An outstanding lawful commitment/hold should not be invalidated merely because RP transport was interrupted. Formal authority and documentation belong in PS-MDT, not a duplicate Parsons medical database. The detailed legal effective-time rule for interrupted or delayed transport must be defined in the revised policy.
 
-### Resource boundaries and interface contract
+### Resource responsibilities
 
-- **qb-ambulancejob:** Add new `/commit` and `/uncommit` entry points for on-duty `job.type == 'ems' or job.type == 'leo'`; route Parsons-specific requests to qb-parsons. Maintain the fork's separately planned `ems` + `fire` medical functionality. Fire medical permissions do not automatically grant commitment authority; LEO commitment access does not grant general medical privileges.
-- **qb-parsons:** Validate incoming requests and maintain only operational admission, patient location, belongings, room, hold expiration and transport state. Adapt original qb-prison mechanisms without using `injail`, `jailitems`, criminal record or prison events for Parsons.
-- **PowerMoves PS-MDT:** SAMS.net owns medical records and medical extension decisions; SADOJ.net owns court records and judicial orders. Define reliable server-side event/export/callback contracts and reference IDs, with error handling/reconciliation; do not create a parallel patient-record system.
-- **qb-policejob:** No edits. Existing `/jail`, `/unjail`, criminal incarceration and original locale wording remain intact.
+- **qb-ambulancejob:** Planned `/commit` and `/uncommit` command entry points for on-duty `job.type == 'ems' or job.type == 'leo'`, with server-side validation and Parsons-specific events. This does **not** grant LEO general ambulance treatment privileges or grant FIRE automatic commitment authority. Preserve the fork's existing EMS/FIRE medical plans.
+- **qb-parsons:** Facility transfer, admission, assigned rooms, belongings, operational hold state, real-time expiry and authorized discharge. Do not reuse prison `injail`, `jailitems`, criminal records or prison events for Parsons.
+- **PowerMoves PS-MDT:** SAMS.net owns medical records and SAMS hold-extension decisions; SADOJ.net owns judicial records/orders and long-term/indefinite/lifetime commitments. Use a defined server-side event/export/callback interface and record references, not a parallel medical record system.
+- **qb-policejob:** No edits. Preserve `/jail`, `/unjail`, prison metadata, existing sentence conversion and translations.
 
 ### Next implementation tasks
 
-- [ ] Define qb-parsons server event/export names, request payloads, response/status and trust boundaries.
-- [ ] Define PS-MDT medical and judicial reference/authorization integration; document handling when PS-MDT is unavailable.
-- [ ] Inspect and reuse qb-prison direct transfer, admission/release, belongings and persistence mechanisms while separating all prison metadata.
-- [ ] Implement and test direct transfer first, then physical transport states and interruption behavior.
-- [ ] Integrate qb-ambulancejob `/commit` and `/uncommit` only after the Parsons backend contract is stable.
-- [ ] Test 72-hour expiry, seven-day and 28-day SAMS extensions, non-expiring SADOJ orders, offline time, reconnects, restarts, transport interruption and authorized release.
+- [ ] Define the `/commit` and `/uncommit` input flow, including how hold type, real-day duration and court authority are represented without prison-style sentence units.
+- [ ] Define qb-parsons server event/export contracts and server-side authorization checks.
+- [ ] Define PS-MDT SAMS/SADOJ reference and validation integration; handle unavailable MDT without silently losing relevant changes.
+- [ ] Inspect/reuse qb-prison admission, transfer, belongings, persistence and release foundations without mixing prison metadata.
+- [ ] Implement and test direct `/commit` admission first; leave physical transport to player RP before the command.
+- [ ] Test 3/7/28-day real-time holds, court-specified real-day terms, indefinite/lifetime holds, offline passage, restart, reconnect and authorized discharge.
 
-**Status:** Approved planning only. No gameplay implementation or external repository changes are implied by this document.
+**Status:** Approved planning only; no gameplay implementation in this change.
