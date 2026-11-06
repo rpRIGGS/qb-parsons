@@ -21,11 +21,19 @@ RegisterNetEvent('parsons:client:ActivityStatus', function(activity)
     if not activeActivity then return end
     local duration = tonumber(activity.durationSeconds) or 0
     local startedAt = GetGameTimer()
+    local lastDisplayedSecond = -1
     QBCore.Functions.Notify((activity.label or 'Activity') .. ' started. Press Backspace to cancel.', 'primary')
     CreateThread(function()
         while serial == sessionId and admitted do
             local elapsed = (GetGameTimer() - startedAt) / 1000
             if elapsed >= duration then break end
+            local remaining = math.max(0, math.ceil(duration - elapsed))
+            if remaining ~= lastDisplayedSecond then
+                lastDisplayedSecond = remaining
+            end
+            BeginTextCommandDisplayHelp('STRING')
+            AddTextComponentSubstringPlayerName(('%s: %ds remaining | BACKSPACE to cancel'):format(activity.label or 'Activity', remaining))
+            EndTextCommandDisplayHelp(0, false, false, -1)
             local station = Config.Locations.jobs and Config.Locations.jobs[activity.id]
             if station and station.coords and #(GetEntityCoords(PlayerPedId()) - vector3(station.coords.x, station.coords.y, station.coords.z)) > (station.radius or 4.0) then
                 TriggerServerEvent('parsons:server:CancelActivity')
@@ -56,6 +64,7 @@ CreateThread(function()
     for id, station in pairs(Config.Locations.jobs or {}) do
         local definition = Config.Jobs[id]
         if definition and station.coords then
+            local activityId = id
             local c = station.coords
             exports['qb-target']:AddBoxZone('parsons_activity_' .. id, vector3(c.x, c.y, c.z),
                 station.length or 2.0, station.width or 2.0, {
@@ -69,7 +78,7 @@ CreateThread(function()
                         icon = 'fas fa-clipboard-check',
                         label = definition.label,
                         action = function()
-                            TriggerServerEvent('parsons:server:StartActivity', id)
+                            TriggerServerEvent('parsons:server:StartActivity', activityId)
                         end,
                         canInteract = function() return admitted and not activeActivity end
                     }},
