@@ -1,4 +1,4 @@
--- PS Dispatch optional integration; only a server-selected on-duty responder emits alerts.
+-- PowerMoves-PSDispatch CustomAlert integration; one server-selected on-duty responder emits each alert.
 local labels = {
     security_communications_failure = 'Gruppe Sechs reports a security monitoring alarm at Parsons Rehabilitation Center',
     gate_security_compromised = 'Gruppe Sechs reports electronic gate tampering at Parsons Rehabilitation Center',
@@ -9,7 +9,8 @@ local labels = {
 RegisterNetEvent('parsons:security:SendDispatch', function(data)
     local cfg = Config.Security and Config.Security.PSDispatch
     if not cfg or not cfg.enabled or GetResourceState('ps-dispatch') ~= 'started' then return end
-    if type(data) ~= 'table' or not labels[data.kind] then return end
+    if type(data) ~= 'table' or not labels[data.kind] or type(data.coords) ~= 'table' then return end
+    if type(data.coords.x) ~= 'number' or type(data.coords.y) ~= 'number' or type(data.coords.z) ~= 'number' then return end
     exports['ps-dispatch']:CustomAlert({
         coords = vector3(data.coords.x, data.coords.y, data.coords.z),
         message = labels[data.kind], dispatchCode = 'PARSONS_' .. data.kind,
