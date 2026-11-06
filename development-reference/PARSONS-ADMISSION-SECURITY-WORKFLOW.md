@@ -26,9 +26,9 @@ Status (2026-11-06): approved design plus partial Stage 7 implementation; not li
 
 - Integrate room access and the front security gate with the installed `qb-doorlock`, after checking its actual door identifiers and individual-access support.
 - A patient may access only their assigned room; medical staff retain authorized access. Remove patient access on discharge.
-- Original upstream `qb-prison/client/prisonbreak.lua` has three gate points, electronic-kit/gatecrack item checks, hacking minigame, `qb-doorlock:server:updateState`, lockdown, alerts, and an escape check that **clears prison jail status and clears the jail-items record**. It does not return the belongings on escape.
+- Original upstream `qb-prison/client/escape.lua` has three gate points, electronic-kit/gatecrack item checks, hacking minigame, `qb-doorlock:server:updateState`, lockdown, alerts, and an escape check that **clears prison jail status and clears the jail-items record**. It does not return the belongings on escape.
 - Parsons should **adapt**, not erase, that design: a smaller, facility-appropriate breach/escape scenario, using the actual Parsons gate and installed doorlock. Never port upstream jail-status clearing, belongings-record clearing on escape, or automatic discharge.
-- Current `client/prisonbreak.lua` contains only perimeter monitoring; original hacking/gate functionality was removed from the fork. Stage 7 must intentionally rebuild/adapt it, with server-authoritative validation and no untrusted client ability to unlock doors.
+- Current `client/escape.lua` contains only perimeter monitoring; original hacking/gate functionality was removed from the fork. Stage 7 must intentionally rebuild/adapt it, with server-authoritative validation and no untrusted client ability to unlock doors.
 
 ## Activities and facility work
 
@@ -43,10 +43,10 @@ Reception PED, inside-gate arrival, guard shack PED, outside checkout destinatio
 
 ## Verified upstream escape behavior (qbcore-fivem/qb-prison)
 
-Reviewed upstream `config.lua`, `client/prisonbreak.lua`, `client/main.lua`, and `server/main.lua` on 2026-11-06:
+Reviewed upstream `config.lua`, `client/escape.lua`, `client/main.lua`, and `server/main.lua` on 2026-11-06:
 
 - No configurable escape-time reset/continuation option was found in upstream `config.lua`.
-- Crossing the prison's 200-unit perimeter in `client/prisonbreak.lua` clears the client's `inJail` and `jailTime`, triggers security lockdown and an alert, calls `prison:server:SetJailStatus(0)`, and calls `prison:server:GiveJailItems(true)`.
+- Crossing the prison's 200-unit perimeter in `client/escape.lua` clears the client's `inJail` and `jailTime`, triggers security lockdown and an alert, calls `prison:server:SetJailStatus(0)`, and calls `prison:server:GiveJailItems(true)`.
 - The server's `GiveJailItems(true)` path clears the `jailitems` metadata **without returning the stored inventory**. This corrects the earlier mistaken description that escape returns belongings.
 - `client/main.lua` returns a player to prison on character load only when `injail > 0`. The upstream escape path sets it to zero, so it does not automatically re-admit that escapee on reconnect.
 - Other forks/versions may behave differently. Do not assume a configurable escape option exists without inspecting that fork.
@@ -128,3 +128,5 @@ Normal security remains unlocked from lockdown unless a genuine breach warrants 
 - **ox_lib:** loaded in `fxmanifest.lua` and required for the configurable security `lib.skillCheck` minigames; planned for reception and guard-shack menus when Stages 1–4 are rebuilt. QBCore, qb-target and customized qb-inventory remain.
 - **Dispatch:** PS Dispatch adapter is coded inside qb-parsons (`server/security.lua`, `client/dispatch.lua`), optional through `Config.Security.PSDispatch.enabled`. No automatic qb-policejob legacy fallback. The client CustomAlert bridge and configured codes require live server validation.
 - **Current outstanding code:** physical gate qb-doorlock integration, remaining security validation/feedback review, and end-to-end incident review. Missing MLO positions and installed door IDs are separately tracked as runtime mapping dependencies, not reasons to block source-code progress.
+
+**Source terminology update (2026-11-06):** `client/escape.lua` replaces upstream `client/prisonbreak.lua`; `client/activities.lua` replaces `client/jobs.lua`. Activity definitions use `Config.Activities` and stations use `Config.Locations.activities`. The original prison spawn/desk placeholders and remaining admission lifecycle terms are intentionally reserved for the Stages 1–4 conversion; do not deploy them as Parsons coordinates.
