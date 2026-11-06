@@ -43,6 +43,59 @@ end)
 AddEventHandler('parsons:server:PatientReturned', function(src, citizenid)
     emit('patient_return', {citizenid = citizenid})
 end)
+-- Server-owned security state; interactions must be validated before invoking.
+local powerUntil, gateUntil = 0, 0
+local function state()
+    local now = os.time()
+    return {powerFailure = now < powerUntil, gateCompromised = now < gateUntil}
+end
+local function validPoint(src, point)
+    if not point or type(point.x) ~= 'number' or type(point.y) ~= 'number' or type(point.z) ~= 'number' then return false end
+    local ped = GetPlayerPed(src)
+    return ped ~= 0 and #(GetEntityCoords(ped) - vector3(point.x, point.y, point.z)) <= 3.0
+end
+local function act(src, action)
+    local cfg = Config.Security
+    if not cfg or not cfg.electrical or not cfg.gate then return false end
+    local now = os.time()
+    if action == 'electrical_inside' or action == 'electrical_outside' then
+        local point = action == 'electrical_inside' and cfg.electrical.inside or cfg.electrical.outside
+        if not validPoint(src, point) or now < powerUntil then return false end
+        powerUntil = now + math.max(30, tonumber(cfg.electrical.durationSeconds) or 180)
+        emit('security_communications_failure', {powerUntil = powerUntil})
+    elseif action == 'gate_hack' then
+        if not validPoint(src, cfg.gate.hack) or now < gateUntil then return false end
+        gateUntil = now + math.max(30, tonumber(cfg.gate.compromisedSeconds) or 120)
+        emit('gate_security_compromised', {gateUntil = gateUntil})
+    else
+        return false
+    end
+    TriggerClientEvent('parsons:security:State', -1, state())
+    return true
+end
+-- Deliberately restricted: no untrusted client event can assert a successful hack.
+exports('ApplyVerifiedSecurityAction', function(src, action)
+    local caller = GetInvokingResource()
+    if caller ~= 'qb-ambulancejob' then return false, 'untrusted resource' end
+    return act(tonumber(src), action)
+end)
+exports('GetFacilitySecurityState', function()
+    if GetInvokingResource() ~= 'qb-ambulancejob' then return nil, 'untrusted resource' end
+    return state()
+end)
+CreateThread(function()
+    local wasPower, wasGate = false, false
+    while true do
+        Wait(2000)
+        local current = state()
+        if wasPower and not current.powerFailure then emit('security_communications_restored') end
+        if wasGate and not current.gateCompromised then emit('gate_security_restored') end
+        if wasPower ~= current.powerFailure or wasGate ~= current.gateCompromised then
+            TriggerClientEvent('parsons:security:State', -1, current)
+        end
+        wasPower, wasGate = current.powerFailure, current.gateCompromised
+    end
+end)
 -- Inspect server-observed vehicles rather than accepting client aircraft reports.
 CreateThread(function()
     while true do
