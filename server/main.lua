@@ -135,12 +135,12 @@ exports('ConfirmBelongingsReconciled', function(targetId, acknowledged)
     return true
 end)
 
--- Use standard QBCore player inventory functions supported by qb-inventory.
+-- Match the upstream qb-prison inventory API: Player.ClearInventory() and qb-inventory:AddItem().
 -- Persist the custody record BEFORE clearing inventory, so a restart cannot
 -- silently discard the snapshot. Pending states require reconciliation.
 local function StoreBelongings(Player)
     if GetBelongings(Player) then return false, 'existing belongings require reconciliation' end
-    if type(Player.Functions.ClearInventory) ~= 'function' or type(Player.Functions.Save) ~= 'function' then
+    if type(Player.ClearInventory) ~= 'function' or type(Player.Functions.Save) ~= 'function' then
         return false, 'required inventory functions unavailable'
     end
     local snapshot = {}
@@ -157,7 +157,7 @@ local function StoreBelongings(Player)
         status = 'storing', items = snapshot, storedAt = os.time()
     })
     Player.Functions.Save()
-    local cleared = Player.Functions.ClearInventory()
+    local cleared = Player.ClearInventory()
     Player.Functions.Save()
     if cleared == false then return false, 'inventory clear failed; staff reconciliation required' end
     for _, item in pairs(Player.PlayerData.items or {}) do
@@ -179,7 +179,7 @@ local function ReturnBelongings(Player)
     if not data then return true end
     if GetHold(Player) then return false, 'patient still committed' end
     if data.status ~= 'stored' then return false, 'belongings require reconciliation' end
-    if type(Player.Functions.AddItem) ~= 'function' or type(Player.Functions.Save) ~= 'function' then
+    if type(Player.Functions.Save) ~= 'function' then
         return false, 'required inventory functions unavailable'
     end
     -- Mark pending before restoration. A partial failure must never cause
@@ -193,7 +193,7 @@ local function ReturnBelongings(Player)
         data.returnIndex = index
         Player.Functions.SetMetaData(BELONGINGS_KEY, data)
         Player.Functions.Save()
-        local success = Player.Functions.AddItem(item.name, item.amount, item.slot, item.info)
+        local success = exports['qb-inventory']:AddItem(Player.PlayerData.source, item.name, item.amount, item.slot, item.info, 'qb-parsons:return-belongings')
         Player.Functions.Save()
         if not success then return false, 'partial return: staff reconciliation required' end
     end
