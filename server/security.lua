@@ -65,6 +65,8 @@ end)
 -- Server-owned security state; interactions must be validated before invoking.
 local powerUntil, gateUntil = 0, 0
 local gateActor = nil
+local gateNeedsRelock = false
+local lastMonitoringAlert = 0
 local function syncGate(locked)
     local gate = Config.Security and Config.Security.gate
     if not gate or type(gate.doorIds) ~= 'table' or #gate.doorIds == 0 then return false end
@@ -102,12 +104,15 @@ local function act(src, action)
         local point = action == 'electrical_inside' and cfg.electrical.inside or cfg.electrical.outside
         if not validPoint(src, point) or now < powerUntil then return false end
         powerUntil = now + math.max(30, tonumber(cfg.electrical.durationSeconds) or 180)
-        emit('security_communications_failure', {powerUntil = powerUntil})
+        if now - lastMonitoringAlert >= math.max(0, tonumber(cfg.monitoring and cfg.monitoring.incidentCooldownSeconds) or 120) then
+            lastMonitoringAlert = now
+            emit('security_communications_failure', {powerUntil = powerUntil})
+        end
     elseif action == 'gate_hack' then
         if not validPoint(src, cfg.gate.hack) or now < gateUntil then return false end
         gateUntil = now + math.max(30, tonumber(cfg.gate.compromisedSeconds) or 120)
         gateActor = src
-        syncGate(false)
+        gateNeedsRelock = syncGate(false)
         emit('gate_security_compromised', {gateUntil = gateUntil})
     else
         return false
@@ -145,10 +150,12 @@ RegisterNetEvent('parsons:security:FinishAction', function(action, token, succee
     local src = source
     local pending = attempts[src]
     attempts[src] = nil
-    if not pending or pending.action ~= action or pending.token ~= token or succeeded ~= true then return end
+    if not pending or pending.action ~= action or pending.token ~= token then return end
+    if succeeded ~= true then return end
     local elapsed = os.time() - pending.started
     if elapsed < 1 or elapsed > 120 or not validPoint(src, actionPoint(action)) or not hasTools(src, action) then return end
-    act(src, action)
+    local applied = act(src, action)
+    TriggerClientEvent('parsons:security:ActionResult', src, applied == true)
 end)
 AddEventHandler('playerDropped', function() attempts[source] = nil end)
 -- Deliberately restricted: no untrusted client event can assert a successful hack.
@@ -168,9 +175,12 @@ CreateThread(function()
         local current = state()
         if wasPower and not current.powerFailure then emit('security_communications_restored') end
         if wasGate and not current.gateCompromised then
-            syncGate(true)
-            gateActor = nil
+            if gateNeedsRelock then gateNeedsRelock = not syncGate(true) end
+            if not gateNeedsRelock then gateActor = nil end
             emit('gate_security_restored')
+        end
+        if gateNeedsRelock and not current.gateCompromised then
+            if syncGate(true) then gateNeedsRelock = false; gateActor = nil end
         end
         if wasPower ~= current.powerFailure or wasGate ~= current.gateCompromised then
             TriggerClientEvent('parsons:security:State', -1, current)
@@ -222,6 +232,9 @@ CreateThread(function()
             end
         end
     end
+end)
+AddEventHandler('onResourceStop', function(resource)
+    if resource == GetCurrentResourceName() and gateNeedsRelock then syncGate(true) end
 end)
 exports('GetRecentSecurityIncidents', function()
     local caller = GetInvokingResource()
