@@ -212,3 +212,5 @@ An outstanding lawful commitment/hold should not be invalidated merely because R
 - Still required in code: physical gate qb-doorlock adapter, security interaction validation/feedback review, and incident/escape consistency audit. Missing MLO mapping and door IDs are tracked separately and must not delay code review.
 - Next approved work order: **finish Stage 7 code → restructure Stages 1–4** for pending arrival, reception check-in, assigned room/belongings and authorized Gruppe Sechs guard-shack checkout → Stage 8.
 - See [PARSONS-ADMISSION-SECURITY-WORKFLOW.md](PARSONS-ADMISSION-SECURITY-WORKFLOW.md), [PARSONS-SERVER-MAPPING-CHECKLIST.md](PARSONS-SERVER-MAPPING-CHECKLIST.md), and [INSTALLATION.md](INSTALLATION.md).
+
+**Source terminology update (2026-11-06):** `client/escape.lua` replaces upstream `client/prisonbreak.lua`; `client/activities.lua` replaces `client/jobs.lua`. Activity definitions use `Config.Activities` and stations use `Config.Locations.activities`. The original prison spawn/desk placeholders and remaining admission lifecycle terms are intentionally reserved for the Stages 1–4 conversion; do not deploy them as Parsons coordinates.
