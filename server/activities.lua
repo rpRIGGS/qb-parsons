@@ -3,10 +3,23 @@ local QBCore = exports['qb-core']:GetCoreObject({'Functions'})
 local active = {}
 local cooldowns = {}
 local nextSessionId = 0
+local function sendStatus(src, session)
+    if not session then
+        TriggerClientEvent('parsons:client:ActivityStatus', src, false)
+        return
+    end
+    local definition = Config.Jobs[session.id]
+    TriggerClientEvent('parsons:client:ActivityStatus', src, {
+        id = session.id,
+        token = session.token,
+        label = definition and definition.label or session.id,
+        durationSeconds = math.max(0, session.finishAt - os.time())
+    })
+end
 local function cancel(src)
     if not active[src] then return end
     active[src] = nil
-    TriggerClientEvent('parsons:client:ActivityStatus', src, false)
+    sendStatus(src, nil)
 end
 local function patient(src)
     local p = QBCore.Functions.GetPlayer(src)
@@ -32,7 +45,7 @@ RegisterNetEvent('parsons:server:StartActivity', function(id)
     local duration = math.max(10, math.floor(tonumber(def.durationSeconds) or 60))
     nextSessionId = nextSessionId + 1
     active[src] = {id = id, token = nextSessionId, finishAt = now + duration}
-    TriggerClientEvent('parsons:client:ActivityStatus', src, {id = id, token = nextSessionId, label = def.label, durationSeconds = duration})
+    sendStatus(src, active[src])
 end)
 RegisterNetEvent('parsons:server:FinishActivity', function(id, token)
     local src = source
@@ -46,8 +59,17 @@ RegisterNetEvent('parsons:server:FinishActivity', function(id, token)
     active[src] = nil
     cooldowns[src] = cooldowns[src] or {}
     cooldowns[src][id] = os.time() + math.max(0, math.floor(tonumber(Config.Jobs[id].cooldownSeconds) or 0))
-    TriggerClientEvent('parsons:client:ActivityStatus', src, false)
+    sendStatus(src, nil)
     TriggerClientEvent('QBCore:Notify', src, 'Activity completed.', 'success')
+end)
+RegisterNetEvent('parsons:server:RequestActivityStatus', function()
+    local src = source
+    local session = active[src]
+    if session and (not patient(src) or not nearStation(src, session.id)) then
+        cancel(src)
+        return
+    end
+    sendStatus(src, session)
 end)
 RegisterNetEvent('parsons:server:CancelActivity', function()
     local src = source
