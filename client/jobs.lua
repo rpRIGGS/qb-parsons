@@ -23,7 +23,7 @@ RegisterNetEvent('parsons:client:ActivityStatus', function(activity)
     CreateThread(function()
         Wait(math.max(0, math.floor(duration * 1000)))
         if serial ~= sessionId or not admitted then return end
-        TriggerServerEvent('parsons:server:FinishActivity', activity.id)
+        TriggerServerEvent('parsons:server:FinishActivity', activity.id, activity.token)
     end)
 end)
 
