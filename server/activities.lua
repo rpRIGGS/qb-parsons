@@ -130,5 +130,12 @@ exports('GetPatientActivityHistory', function(targetId)
     if not Player then return nil, 'patient offline' end
     local hold = Player.PlayerData.metadata and Player.PlayerData.metadata.parsons_hold
     if type(hold) ~= 'table' or hold.active ~= true then return nil, 'no active admission' end
-    return type(hold.activities) == 'table' and hold.activities or {}
+    local history = type(hold.activities) == 'table' and hold.activities or {}
+    local copy = {}
+    for i, entry in ipairs(history) do
+        if type(entry) == 'table' then
+            copy[i] = {id = entry.id, completedAt = entry.completedAt, durationSeconds = entry.durationSeconds}
+        end
+    end
+    return copy
 end)
