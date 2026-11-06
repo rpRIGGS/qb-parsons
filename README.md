@@ -49,6 +49,22 @@ qb-parsons is planned to transform prison mechanics into a small psychiatric and
 
 The adaptation will retain the PowerMoves RP QBCore ecosystem; no migration to `ox_target` or `ox_inventory` is planned. Exact dependencies and setup steps will be documented as implementation progresses.
 
+## Installation integration — qb-spawn (required before deployment)
+
+The PowerMoves `qb-spawn` character-login spawn selector currently checks the QBCore `injail` metadata. **Preserve that check.** Add a separate Parsons check for an active `parsons_hold` so committed patients cannot select an unrestricted spawn location.
+
+Illustrative condition for the existing spawn decision (adapt to the actual `qb-spawn` file and its variable names):
+
+```lua
+local metadata = PlayerData.metadata or {}
+local hold = metadata.parsons_hold
+local isParsonsPatient = type(hold) == 'table' and hold.active == true
+-- Keep the existing injail branch unchanged; handle isParsonsPatient as
+-- an additional branch before opening the ordinary spawn selector.
+```
+
+On an active Parsons hold, bypass ordinary spawn choices and use the Parsons admission/reconnect placement flow. Do **not** replace the original jail check, use `injail` for Parsons, or copy the placeholder prison coordinates into qb-spawn. This is an integration instruction, **not yet a tested drop-in patch**: inspect the installed PowerMoves `qb-spawn` version and confirm its event flow before editing it. Final Parsons MLO coordinates are still pending.
+
 ## Credits and License
 
 Adapted from [QBCore qb-prison](https://github.com/qbcore-fivem/qb-prison). Original authors and contributors retain their respective credits. PowerMoves RP is responsible for its own adaptation.
