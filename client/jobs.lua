@@ -19,9 +19,18 @@ RegisterNetEvent('parsons:client:ActivityStatus', function(activity)
     activeActivity = activity or nil
     if not activeActivity then return end
     local duration = tonumber(activity.durationSeconds) or 0
+    local startedAt = GetGameTimer()
     QBCore.Functions.Notify((activity.label or 'Activity') .. ' started.', 'primary')
     CreateThread(function()
-        Wait(math.max(0, math.floor(duration * 1000)))
+        while serial == sessionId and admitted do
+            local elapsed = (GetGameTimer() - startedAt) / 1000
+            if elapsed >= duration then break end
+            if IsControlJustReleased(0, 177) then
+                TriggerServerEvent('parsons:server:CancelActivity')
+                return
+            end
+            Wait(0)
+        end
         if serial ~= sessionId or not admitted then return end
         TriggerServerEvent('parsons:server:FinishActivity', activity.id, activity.token)
     end)
