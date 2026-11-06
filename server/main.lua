@@ -8,6 +8,7 @@ local allowedResources = {['qb-ambulancejob'] = true}
 local lastTick = {}
 local lastEligible = {}
 local departureCooldown = {}
+local lastInside = {}
 local function GetPlayer(id)
     return QBCore.Functions.GetPlayer(tonumber(id))
 end
@@ -61,7 +62,7 @@ local function UpdateAbsence(Player, hold, inside)
             changed = true
             TriggerEvent('parsons:server:PatientReturned', Player.PlayerData.source, Player.PlayerData.citizenid)
         end
-    elseif hold.absentSince == nil then
+    elseif hold.absentSince == nil and lastInside[Player.PlayerData.source] == true then
         hold.absentSince = now
         hold.lastDepartedAt = now
         changed = true
@@ -89,6 +90,7 @@ local function TickHold(Player)
     local hold = GetHold(Player)
     local inside = InsideFacility(src)
     hold = UpdateAbsence(Player, hold, inside)
+    lastInside[src] = inside
     local eligible = hold ~= nil and hold.checkedIn == true and inside
     lastTick[src] = now
     lastEligible[src] = eligible
@@ -282,6 +284,7 @@ exports('AdmitPatient', function(targetId, kind, phase, days)
     Player.Functions.Save()
     lastTick[Player.PlayerData.source] = os.time()
     lastEligible[Player.PlayerData.source] = false
+    lastInside[Player.PlayerData.source] = nil
     TriggerClientEvent('parsons:client:Admit', Player.PlayerData.source, PublicState(hold))
     return true
 end)
@@ -330,6 +333,7 @@ exports('DischargePatient', function(targetId, authority)
     departureCooldown[Player.PlayerData.source] = nil
     lastTick[Player.PlayerData.source] = nil
     lastEligible[Player.PlayerData.source] = nil
+    lastInside[Player.PlayerData.source] = nil
     TriggerClientEvent('parsons:client:Discharge', Player.PlayerData.source)
     return true, returned and nil or ('discharged; belongings pending: ' .. tostring(returnError))
 end)
@@ -392,5 +396,6 @@ end)
 AddEventHandler('playerDropped', function()
     lastTick[source] = nil
     lastEligible[source] = nil
+    lastInside[source] = nil
     departureCooldown[source] = nil
 end)
