@@ -6,7 +6,10 @@ author 'Kakarot'
 description 'PowerMoves RP Parsons Rehabilitation Center admission and discharge foundation'
 version '2.3.0'
 
+dependency 'ox_lib'
+
 shared_scripts {
+    '@ox_lib/init.lua',
     '@qb-core/shared/locale.lua',
     'locales/en.lua',
     'locales/*.lua',
