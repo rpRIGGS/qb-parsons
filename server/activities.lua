@@ -2,6 +2,7 @@
 local QBCore = exports['qb-core']:GetCoreObject({'Functions'})
 local active = {}
 local cooldowns = {}
+local nextSessionId = 0
 local function patient(src)
     local p = QBCore.Functions.GetPlayer(src)
     local h = p and p.PlayerData.metadata and p.PlayerData.metadata.parsons_hold
@@ -24,13 +25,14 @@ RegisterNetEvent('parsons:server:StartActivity', function(id)
     local now = os.time()
     if (cooldowns[src] and cooldowns[src][id] or 0) > now then return end
     local duration = math.max(10, math.floor(tonumber(def.durationSeconds) or 60))
-    active[src] = {id = id, finishAt = now + duration}
-    TriggerClientEvent('parsons:client:ActivityStatus', src, {id = id, label = def.label, durationSeconds = duration})
+    nextSessionId = nextSessionId + 1
+    active[src] = {id = id, token = nextSessionId, finishAt = now + duration}
+    TriggerClientEvent('parsons:client:ActivityStatus', src, {id = id, token = nextSessionId, label = def.label, durationSeconds = duration})
 end)
-RegisterNetEvent('parsons:server:FinishActivity', function(id)
+RegisterNetEvent('parsons:server:FinishActivity', function(id, token)
     local src = source
     local session = active[src]
-    if not session or session.id ~= id then return end
+    if not session or session.id ~= id or session.token ~= token then return end
     if not patient(src) or not nearStation(src, id) then
         active[src] = nil
         TriggerClientEvent('parsons:client:ActivityStatus', src, false)
