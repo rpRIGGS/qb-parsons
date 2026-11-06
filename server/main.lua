@@ -414,7 +414,13 @@ RegisterNetEvent('parsons:server:ReceptionCheckIn', function()
     local point = Config.Reception and Config.Reception.coords
     if not Player or not point then return end
     local ped = GetPlayerPed(src)
-    if not ped or ped == 0 or #(GetEntityCoords(ped) - vec3(point.x, point.y, point.z)) > 4.0 then return end
+    if not ped or ped == 0 then return end
+    local nearby = #(GetEntityCoords(ped) - vec3(point.x, point.y, point.z)) <= 4.0
+    for _, other in ipairs(Config.Reception.additionalCoords or {}) do
+        if other.x and other.y and other.z and
+            #(GetEntityCoords(ped) - vec3(other.x, other.y, other.z)) <= 4.0 then nearby = true break end
+    end
+    if not nearby then return end
     local hold = GetHold(Player)
     if not hold or (hold.checkedIn and not hold.roomReservationExpired) then return end
     if hold.checkedIn and hold.roomReservationExpired then
