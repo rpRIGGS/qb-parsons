@@ -101,7 +101,7 @@ end)
 -- Persist the custody record BEFORE clearing inventory, so a restart cannot
 -- silently discard the snapshot. Pending states require reconciliation.
 local function StoreBelongings(Player)
-    if GetBelongings(Player) then return true end
+    if GetBelongings(Player) then return false, 'existing belongings require reconciliation' end
     local snapshot = {}
     for slot, item in pairs(Player.PlayerData.items or {}) do
         if item and item.name and item.amount and item.amount > 0 then
@@ -150,7 +150,8 @@ exports('AdmitPatient', function(targetId, kind, phase, days)
     if GetHold(Player) then return false, 'patient already admitted' end
     local hold, err = BuildHold(kind, phase, days)
     if not hold then return false, err end
-    if not StoreBelongings(Player) then return false, 'belongings storage failed' end
+    local stored, storageError = StoreBelongings(Player)
+    if not stored then return false, storageError or 'belongings storage failed' end
     SetHold(Player, hold)
     lastTick[Player.PlayerData.source] = os.time()
     TriggerClientEvent('parsons:client:Admit', Player.PlayerData.source, PublicState(hold))
@@ -196,7 +197,7 @@ exports('DischargePatient', function(targetId, authority)
     departureCooldown[Player.PlayerData.source] = nil
     lastTick[Player.PlayerData.source] = nil
     TriggerClientEvent('parsons:client:Discharge', Player.PlayerData.source)
-    return true
+    return true, returned and nil or ('discharged; belongings pending: ' .. tostring(returnError))
 end)
 
 QBCore.Functions.CreateCallback('parsons:server:GetAdmission', function(src, cb)
