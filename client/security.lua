@@ -15,16 +15,11 @@ RegisterNetEvent('parsons:security:StartAction', function(key, token)
     for _, entry in ipairs(actions) do if entry.key == key then label = entry.label break end end
     if not label then return end
     busy = true
-    QBCore = QBCore or exports['qb-core']:GetCoreObject({'Functions'})
-    QBCore.Functions.Progressbar('parsons_security_' .. key, label, 12000, false, true,
-        {disableMovement = true, disableCarMovement = true, disableMouse = false, disableCombat = true},
-        {}, {}, {}, function()
-            busy = false
-            TriggerServerEvent('parsons:security:FinishAction', key, token, true)
-        end, function()
-            busy = false
-            TriggerServerEvent('parsons:security:FinishAction', key, token, false)
-        end)
+    local settings = Config.Security.minigames
+    local spec = key == 'gate_hack' and settings.gate or settings.electrical
+    local success = lib.skillCheck(spec.difficulty, spec.inputs)
+    busy = false
+    TriggerServerEvent('parsons:security:FinishAction', key, token, success == true)
 end)
 CreateThread(function()
     Wait(1000)
