@@ -41,7 +41,7 @@ Config.Security = {
     guard = {weapon = 'WEAPON_NIGHTSTICK', respawnSeconds = 300, clearRadius = 35.0, ped = 's_m_m_security_01'}, -- guard shack position pending
     power = {localOnly = true, restoreSeconds = 300, controllableLights = {}}, -- never invoke global qb-weathersync blackout
     PSDispatch = {enabled = true, jobs = {'police', 'sheriff', 'state', 'leo'}, codes = {
-        security_communications_failure = '10-90', gate_security_compromised = '10-90',
+        security_communications_failure = '10-90', gate_security_compromised = '10-90', failed_gate_hack = '10-90',
         unauthorized_aircraft = '10-66', patient_departure = '10-80', patient_return = '10-80'
     }},
     electrical = {item = 'electronickit', inside = nil, outside = nil, durationSeconds = 300},
