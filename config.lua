@@ -25,8 +25,8 @@ Config.PatientRooms = {} -- Entries: {id = 'actual-room-id', doorIds = {'actual-
 Config.PatientRoomStaffJobTypes = {'ems'} -- Authorized on-duty medical staff; do not grant blanket LEO access
 Config.Reception = { coords = vector4(-1501.46, 849.16, 181.6, 249.1), additionalCoords = {vector4(-1514.51, 848.23, 181.6, 114.2)}, ped = 's_m_m_doctor_01' } -- Initial check-in and return to treatment
 Config.GuardShack = { coords = vector4(-1486.85, 881.13, 183.35, 341.37), ped = 's_m_m_security_01' } -- Status and authorized checkout
-Config.Arrival = nil -- vector4 inside front gate, never reuse prison spawns
-Config.Release = nil -- vector4 outside Parsons gate
+Config.Arrival = vector4(-1523.8, 854.92, 181.59, 36.46) -- Inside Parsons gate
+Config.Release = vector4(-1475.89, 881.74, 182.98, 301.48) -- Outside Parsons gate
 Config.FacilityZone = { -- Parsons PolyZone export, 2026-11-06; adjust vertical limits after devPoly inspection
     points = {
         vector2(-1484.771484375, 880.91412353516),
