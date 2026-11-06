@@ -10,7 +10,8 @@ Config.Jobs = {
 }
 -- Activity coordinates remain unset until the Parsons MLO is mapped.
 -- No activity reduces a hold or grants money/items.
-Config.EscapeDetectionRadius = 200.0 -- Placeholder until Parsons MLO perimeter is mapped
+Config.FacilityZone = { points = {}, minZ = nil, maxZ = nil } -- Parsons PolyZone coordinates pending
+Config.EscapeDetectionRadius = 200.0 -- Legacy prison radius; replace with validated facility polygon
 
 Config.Uniforms = {
     ['male'] = {
