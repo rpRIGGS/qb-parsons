@@ -55,18 +55,19 @@ local function UpdateAbsence(Player, hold, inside)
     if not hold or hold.checkedIn ~= true then return hold end
     local now = os.time()
     local changed = false
+    local signal = nil
     if inside then
         if hold.absentSince ~= nil then
             hold.lastReturnedAt = now
             hold.absentSince = nil
             changed = true
-            TriggerEvent('parsons:server:PatientReturned', Player.PlayerData.source, Player.PlayerData.citizenid)
+            signal = 'parsons:server:PatientReturned'
         end
     elseif hold.absentSince == nil and lastInside[Player.PlayerData.source] == true then
         hold.absentSince = now
         hold.lastDepartedAt = now
         changed = true
-        TriggerEvent('parsons:server:UnauthorizedDepartureVerified', Player.PlayerData.source, Player.PlayerData.citizenid)
+        signal = 'parsons:server:UnauthorizedDepartureVerified'
     end
     local grace = math.max(0, tonumber(Config.EscapeRoomGraceHours) or 48) * 3600
     if hold.absentSince and now - hold.absentSince >= grace and hold.roomReservationExpired ~= true then
@@ -78,6 +79,7 @@ local function UpdateAbsence(Player, hold, inside)
     if changed then
         Player.Functions.SetMetaData(METADATA_KEY, hold)
         Player.Functions.Save()
+        if signal then TriggerEvent(signal, Player.PlayerData.source, Player.PlayerData.citizenid) end
     end
     return hold
 end
