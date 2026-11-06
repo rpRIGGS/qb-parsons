@@ -1,10 +1,10 @@
 -- PS Dispatch optional integration; only a server-selected on-duty responder emits alerts.
 local labels = {
-    security_communications_failure = 'Parsons security monitoring reports lost communications; request welfare/security check',
-    gate_security_compromised = 'Parsons electronic gate security compromised; units requested',
-    unauthorized_aircraft = 'Unauthorized low aircraft entering Parsons secured property',
-    patient_departure = 'Confirmed unauthorized patient departure from Parsons',
-    patient_return = 'Parsons patient recovered; update incident'
+    security_communications_failure = 'Gruppe Sechs reports a security monitoring alarm at Parsons Rehabilitation Center',
+    gate_security_compromised = 'Gruppe Sechs reports electronic gate tampering at Parsons Rehabilitation Center',
+    unauthorized_aircraft = 'Gruppe Sechs reports unauthorized low aircraft over Parsons Rehabilitation Center',
+    patient_departure = 'Gruppe Sechs reports confirmed unauthorized patient departure from Parsons',
+    patient_return = 'Gruppe Sechs reports patient returned to Parsons'
 }
 RegisterNetEvent('parsons:security:SendDispatch', function(data)
     local cfg = Config.Security and Config.Security.PSDispatch
