@@ -34,3 +34,13 @@ The example coordinates are NOT installed as active stations.
 
 ## Stage 5 dependency
 Stage 5 inventory/reconnect behavior still requires PowerMoves development-server verification. Stage 6 groundwork does not signify that Stage 5 has passed live testing.
+
+## Additional safeguards committed
+
+- The client cancels activity when the patient walks beyond the configured station radius.
+- A server-side periodic check independently cancels sessions when the hold ends or the player leaves the station.
+- Activity completion remains bound to a server-issued token and elapsed duration.
+
+## qb-spawn installation integration note
+
+The existing qb-spawn jail check must also recognize active `PlayerData.metadata.parsons_hold` (`type(hold) == 'table' and hold.active == true`). The original `injail` behavior must remain unchanged. Active Parsons patients should bypass normal spawn choices and return to Parsons. Add a precise patch/snippet after reviewing the server's actual qb-spawn version; do not overwrite qb-spawn from this repository.
