@@ -39,6 +39,29 @@ local function emit(kind, details)
     if #incidents > 100 then table.remove(incidents, 1) end
     -- Trusted dispatch and SAMS adapters subscribe server-side, and decide recipients.
     TriggerEvent('parsons:security:Incident', record)
+    local dispatch = Config.Security and Config.Security.PSDispatch
+    if dispatch and dispatch.enabled and GetResourceState('ps-dispatch') == 'started' then
+        local point = record.details.coords or (Config.Reception and Config.Reception.coords) or
+            (Config.FacilityZone.points and Config.FacilityZone.points[1])
+        if point and point.x and point.y then
+            local payload = {kind = kind, code = dispatch.codes and dispatch.codes[kind] or '10-90',
+                jobs = dispatch.jobs, coords = {x = point.x, y = point.y, z = point.z or Config.FacilityZone.minZ or 0}}
+            for _, id in ipairs(QBCore.Functions.GetPlayers()) do
+                local player = QBCore.Functions.GetPlayer(id)
+                if player and player.PlayerData.job and player.PlayerData.job.onduty then
+                    local job = player.PlayerData.job
+                    local authorized = false
+                    for _, allowed in ipairs(dispatch.jobs or {}) do
+                        if job.name == allowed or job.type == allowed then authorized = true break end
+                    end
+                    if authorized then
+                        TriggerClientEvent('parsons:security:SendDispatch', id, payload)
+                        break
+                    end
+                end
+            end
+        end
+    end
     print(('[qb-parsons] Security incident %d: %s'):format(record.id, kind))
 end
 AddEventHandler('parsons:server:UnauthorizedDepartureVerified', function(src, citizenid)
