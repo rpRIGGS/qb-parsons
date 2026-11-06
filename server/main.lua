@@ -9,6 +9,21 @@ local lastTick = {}
 local lastEligible = {}
 local departureCooldown = {}
 local lastInside = {}
+-- Offline room expiry is stored separately from player metadata, then reconciled on login.
+local function RoomKey(roomId) return 'parsons_room_' .. roomId end
+local function AbsenceKey(roomId) return 'parsons_absence_' .. roomId end
+local function ClearRoomReservation(roomId, citizenid)
+    if not roomId or GetResourceKvpString(RoomKey(roomId)) ~= citizenid then return false end
+    DeleteResourceKvp(RoomKey(roomId))
+    DeleteResourceKvp(AbsenceKey(roomId))
+    return true
+end
+local function MarkRoomAbsence(roomId, citizenid, since)
+    if roomId and GetResourceKvpString(RoomKey(roomId)) == citizenid then
+        SetResourceKvpInt(AbsenceKey(roomId), since)
+    end
+end
+
 local function GetPlayer(id)
     return QBCore.Functions.GetPlayer(tonumber(id))
 end
@@ -54,6 +69,12 @@ end
 local function UpdateAbsence(Player, hold, inside)
     if not hold or hold.checkedIn ~= true then return hold end
     local now = os.time()
+    if hold.roomId and hold.absentSince and not (hold.transport and hold.transport.active) then
+        MarkRoomAbsence(hold.roomId, Player.PlayerData.citizenid, hold.absentSince)
+    end
+    if hold.roomId and GetResourceKvpString(RoomKey(hold.roomId)) ~= Player.PlayerData.citizenid then
+        hold.roomReservationExpired = true
+    end
     local changed = false
     local signal = nil
     if inside then
@@ -62,21 +83,21 @@ local function UpdateAbsence(Player, hold, inside)
             hold.lastReturnedAt = now
             hold.absentSince = nil
             hold.absenceReason = nil
+            if hold.roomId then MarkRoomAbsence(hold.roomId, Player.PlayerData.citizenid, 0) end
             changed = true
             signal = 'parsons:server:PatientReturned'
         end
     elseif hold.absentSince == nil and not (hold.transport and hold.transport.active) and lastInside[Player.PlayerData.source] == true then
         hold.absentSince = now
         hold.lastDepartedAt = now
+        MarkRoomAbsence(hold.roomId, Player.PlayerData.citizenid, now)
         changed = true
         signal = 'parsons:server:UnauthorizedDepartureVerified'
     end
     local grace = math.max(0, tonumber(Config.EscapeRoomGraceHours) or 48) * 3600
     if hold.absentSince and now - hold.absentSince >= grace and hold.roomReservationExpired ~= true then
         hold.roomReservationExpired = true
-        if hold.roomId and GetResourceKvpString('parsons_room_' .. hold.roomId) == Player.PlayerData.citizenid then
-            DeleteResourceKvp('parsons_room_' .. hold.roomId)
-        end
+        ClearRoomReservation(hold.roomId, Player.PlayerData.citizenid)
         changed = true
         -- A room manager must revoke access and free the assigned room atomically.
         TriggerEvent('parsons:server:RoomGraceExpired', Player.PlayerData.citizenid, hold.roomId)
@@ -363,7 +384,8 @@ RegisterNetEvent('parsons:server:ReceptionCheckIn', function()
         TriggerClientEvent('QBCore:Notify', src, err or 'Belongings storage failed; staff assistance required.', 'error')
         return
     end
-    SetResourceKvp('parsons_room_' .. roomId, Player.PlayerData.citizenid)
+    SetResourceKvp(RoomKey(roomId), Player.PlayerData.citizenid)
+    SetResourceKvpInt(AbsenceKey(roomId), 0)
     hold.checkedIn = true
     hold.roomId = roomId
     hold.roomReservationExpired = false
@@ -407,6 +429,7 @@ local function TransportAction(src, patientId, returning)
         hold.transport.active = false
         hold.absentSince = nil
         hold.absenceReason = nil
+        MarkRoomAbsence(hold.roomId, patient.PlayerData.citizenid, 0)
         hold.lastReturnedAt = os.time()
     else
         if hold.transport and hold.transport.active then return false, 'Already checked out for transport' end
@@ -414,6 +437,7 @@ local function TransportAction(src, patientId, returning)
         hold.transport = {active = true, officer = officer.PlayerData.citizenid, startedAt = os.time(), purpose = 'court'}
         hold.absentSince = nil
         hold.absenceReason = nil
+        MarkRoomAbsence(hold.roomId, patient.PlayerData.citizenid, 0)
     end
     SetHold(patient, hold)
     patient.Functions.Save()
@@ -472,9 +496,7 @@ exports('DischargePatient', function(targetId, authority)
     if hold.kind == 'medical' and authority ~= 'medical' and authority ~= 'judicial' then
         return false, 'medical clearance required'
     end
-    if hold.roomId and RoomOwner(hold.roomId) == Player.PlayerData.citizenid then
-        DeleteResourceKvp('parsons_room_' .. hold.roomId)
-    end
+    ClearRoomReservation(hold.roomId, Player.PlayerData.citizenid)
     SetHold(Player, nil)
     Player.Functions.Save()
     local returned, returnError = ReturnBelongings(Player)
@@ -533,6 +555,27 @@ RegisterNetEvent('parsons:server:ReportUnauthorizedDeparture', function()
     -- Client hints never create or reset an absence timestamp.
 end)
 
+-- Expire disconnected patients' room reservations without requiring them to reconnect.
+-- Metadata reconciliation happens when the patient next loads; the hold is never deleted.
+CreateThread(function()
+    while true do
+        Wait(60000)
+        local now = os.time()
+        local grace = math.max(0, tonumber(Config.EscapeRoomGraceHours) or 48) * 3600
+        for _, room in ipairs(Config.PatientRooms or {}) do
+            if type(room) == 'table' and type(room.id) == 'string' then
+                local owner = GetResourceKvpString(RoomKey(room.id))
+                local since = GetResourceKvpInt(AbsenceKey(room.id))
+                if owner and since > 0 and now - since >= grace then
+                    if ClearRoomReservation(room.id, owner) then
+                        TriggerEvent('parsons:server:RoomGraceExpired', owner, room.id)
+                    end
+                end
+            end
+        end
+    end
+end)
+
 -- Count only connected, checked-in time at server-verified Parsons positions.
 -- Until a valid polygon is configured, no treatment time is deducted.
 -- The first tick after reconnect initializes the clock; offline gaps never subtract.
@@ -555,6 +598,7 @@ AddEventHandler('playerDropped', function()
             hold.absentSince = os.time()
             hold.lastDepartedAt = hold.absentSince
             hold.absenceReason = 'disconnect'
+            MarkRoomAbsence(hold.roomId, Player.PlayerData.citizenid, hold.absentSince)
             SetHold(Player, hold)
             Player.Functions.Save()
         end
