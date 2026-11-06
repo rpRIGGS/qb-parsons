@@ -27,9 +27,15 @@
 ## 4. Installed integrations to verify
 - [ ] Confirm PS Dispatch installed version; optional `Config.Security.PSDispatch.enabled` defaults to false. Review dispatch codes and law-enforcement job filters.
 - [ ] Confirm the gate doorlock export/event actually used on the development server.
-- [ ] Confirm the installed hacking minigame resource/API if a skill-based hack is desired rather than the existing timed interaction.
-- [ ] Confirm actual QBCore items `electronickit` and `gatecrack` are available.
+- [ ] Verify the installed `ox_lib` version supports `lib.skillCheck` and test configured electrical/gate difficulties in-game (the skill-check integration is already coded).
+- [ ] Confirm actual QBCore items `electronickit` and `gatecrack` are available in the installed customized qb-inventory.
 - [ ] For Stage 9, confirm qb-ambulancejob, SAMS.net, SADOJ.net and qb-spawn interfaces.
 
 ## Not required from you right now
 No new architectural decisions, second PolyZone, NPC security department, or extra coordinates. The 48-hour room grace and patient hold preservation are already approved. Unmapped features must remain disabled safely rather than use prison coordinates.
+
+## Approved reporting and NPC identity
+
+- Front security gate guard: **Gruppe Sechs** uniform/NPC; confirm suitable Rockstar ped model in-game.
+- Parsons police alerts: **Gruppe Sechs** is the reporting security company, via optional PS Dispatch. No legacy dispatch fallback.
+- The security minigames use `ox_lib` (not an additional hacking resource); no new sabotage items are required.
