@@ -34,6 +34,14 @@ RegisterNetEvent('parsons:client:Admit', function(state)
     QBCore.Functions.Notify('Commitment recorded. Report to Parsons reception for check-in.', 'primary')
 end)
 
+RegisterNetEvent('parsons:client:ReceptionComplete', function(state)
+    if type(state) ~= 'table' or not state.active or not state.checkedIn then return end
+    hold = state
+    admitted = true
+    ApplyPatientClothes()
+    TriggerEvent('parsons:client:AdmissionState', true)
+end)
+
 RegisterNetEvent('parsons:client:Discharge', function()
     -- A server-issued event is not by itself a substitute for authorization;
     -- the server must validate discharge before emitting it.
