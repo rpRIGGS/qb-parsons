@@ -56,21 +56,23 @@ local function emit(kind, details)
     end
     print(('[qb-parsons] Security incident %d: %s'):format(record.id, kind))
 end
--- Guard assault reports are verified against the configured guard shack, not arbitrary
--- client-supplied coordinates. A cooldown prevents repeated dispatch from the same fight.
+-- Guard peds are currently client-local. A client report cannot prove damage or death,
+-- so there is intentionally NO network event that converts such reports into dispatch.
+-- A future network-owned guard can use this trusted resource-only integration point.
 local lastGuardAlert = 0
-RegisterNetEvent('parsons:security:GuardThreat', function(kind)
-    local src = source
-    if kind ~= 'guard_assault' and kind ~= 'guard_down' then return end
+exports('ReportVerifiedGuardIncident', function(kind)
+    local caller = GetInvokingResource()
+    if caller ~= 'qb-ambulancejob' then return false, 'untrusted resource' end
+    if kind ~= 'guard_assault' and kind ~= 'guard_down' then return false, 'invalid incident' end
     local point = Config.GuardShack and Config.GuardShack.coords
-    if not point or type(point.x) ~= 'number' then return end
-    local ped = GetPlayerPed(src)
-    if not ped or ped == 0 then return end
-    if #(GetEntityCoords(ped) - vector3(point.x, point.y, point.z)) > 50.0 then return end
+    if not point or type(point.x) ~= 'number' or type(point.y) ~= 'number' or type(point.z) ~= 'number' then
+        return false, 'guard shack not mapped'
+    end
     local now = os.time()
-    if now - lastGuardAlert < 120 then return end
+    if now - lastGuardAlert < 120 then return false, 'cooldown' end
     lastGuardAlert = now
     emit(kind, {coords = {x = point.x, y = point.y, z = point.z}, provider = 'Gruppe Sechs'})
+    return true
 end)
 AddEventHandler('parsons:server:UnauthorizedDepartureVerified', function(src, citizenid)
     emit('patient_departure', {citizenid = citizenid})
