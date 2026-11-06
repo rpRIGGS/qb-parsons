@@ -173,7 +173,11 @@ end
 CreateThread(function()
     while true do
         Wait(2000)
-        if guardPed and DoesEntityExist(guardPed) then
+        if guardPed and not DoesEntityExist(guardPed) then
+            guardPed = nil
+            guardDeathAt = nil
+            SetupGuard()
+        elseif guardPed and DoesEntityExist(guardPed) then
             if IsPedDeadOrDying(guardPed, true) then
                 guardDeathAt = guardDeathAt or GetGameTimer()
                 if GetGameTimer() - guardDeathAt >= (tonumber(Config.Security.guard.respawnSeconds) or 300) * 1000
