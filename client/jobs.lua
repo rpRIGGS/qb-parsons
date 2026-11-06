@@ -74,6 +74,13 @@ RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
     TriggerServerEvent('parsons:server:RequestActivityStatus')
 end)
 
+RegisterNetEvent('QBCore:Client:OnPlayerUnload', function()
+    admitted = false
+    sessionId = sessionId + 1
+    activeActivity = nil
+    StopActivityPresentation()
+end)
+
 function GetParsonsActivity()
     return activeActivity
 end
