@@ -21,7 +21,8 @@ client_scripts {
     '@PolyZone/ComboZone.lua',
     'client/main.lua',
     'client/jobs.lua',
-    'client/prisonbreak.lua'
+    'client/prisonbreak.lua',
+    'client/dispatch.lua'
 }
 
 server_scripts {
