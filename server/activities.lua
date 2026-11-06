@@ -62,6 +62,18 @@ RegisterNetEvent('parsons:server:FinishActivity', function(id, token)
         return
     end
     active[src] = nil
+    -- Participation history belongs to this admission, not a global player counter.
+    local Player = patient(src)
+    if Player then
+        local hold = Player.PlayerData.metadata.parsons_hold
+        hold.activities = type(hold.activities) == 'table' and hold.activities or {}
+        local history = hold.activities
+        history[#history + 1] = {id = id, completedAt = os.time(), durationSeconds = math.max(10, math.floor(tonumber(Config.Jobs[id].durationSeconds) or 60))}
+        -- Bound metadata growth for long court commitments.
+        while #history > 100 do table.remove(history, 1) end
+        Player.Functions.SetMetaData('parsons_hold', hold)
+        Player.Functions.Save()
+    end
     cooldowns[src] = cooldowns[src] or {}
     cooldowns[src][id] = os.time() + math.max(0, math.floor(tonumber(Config.Jobs[id].cooldownSeconds) or 0))
     sendStatus(src, nil)
