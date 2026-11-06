@@ -11,7 +11,7 @@ Planning checklist for PowerMoves RP Parsons Rehabilitation Center.
 ## Patient management
 - [ ] Voluntary admissions and outpatient visits.
 - [ ] Involuntary 72-hour evaluations and judicial commitments measured in real-life days.
-- [ ] Real-time holds that persist offline; no activity-based time reduction.
+- [ ] Online-only commitment countdown persisted through disconnects; no activity-based time reduction.
 - [ ] Extensions, discharge authorization and hospital referrals.
 - [ ] Patient rooms, storage, belongings and clothing.
 - [ ] Unauthorized departures and escape-related RP.
@@ -53,7 +53,7 @@ Admissions to support:
 - Outpatient counseling and follow-up without residential confinement.
 
 ### Hold and discharge behavior
-- Track actual start/end timestamps, including offline elapsed time and restarts.
+- Persist remaining online commitment time across disconnects and restarts; offline time does not count.
 - Do not shorten holds for work, therapy, or recreational activities.
 - At hold expiry, check whether a lawful extension/order exists; never release solely on a countdown when an active order supersedes it.
 - Persist operational discharge status and return of stored belongings; send formal discharge documentation to PS-MDT.
@@ -141,11 +141,11 @@ See [UPSTREAM-PRISON-AUDIT.md](UPSTREAM-PRISON-AUDIT.md) for verified upstream p
 
 ## Approved commitment and admission architecture (2026-11-06; corrected)
 
-These decisions supersede conflicting earlier planning text in this file and other references. The 2023 PowerMoves 51-50 policy is historical context; the revised SAMS/SADOJ policy remains to be written. **Planning only; not implemented.**
+These decisions supersede conflicting earlier planning text in this file and other references. The 2023 PowerMoves 51-50 policy is historical context; the revised SAMS/SADOJ policy remains to be written. **Operational hold and belongings foundations implemented; external authorization, facility interactions and live testing remain pending.**
 
 ### Hold types, units and authority
 
-**Parsons uses real-life days and real elapsed time, including offline time and server restarts.** It does not use prison RP months, accelerated prison sentence time, or the prison `99999` (“the 9's”) convention.
+**Parsons uses real-life days and real-life days of accumulated online time, excluding offline time.** It does not use prison RP months, accelerated prison sentence time, or the prison `99999` (“the 9's”) convention.
 
 | Type | Actual duration | Responsible authority |
 | --- | --- | --- |
@@ -188,3 +188,18 @@ An outstanding lawful commitment/hold should not be invalidated merely because R
 - [ ] Test 3/7/28-day real-time holds, court-specified real-day terms, indefinite/lifetime holds, offline passage, restart, reconnect and authorized discharge.
 
 **Status:** Approved planning only; no gameplay implementation in this change.
+
+## Current implementation status (2026-11-06)
+
+- [x] Operational medical and judicial hold metadata, including indefinite court commitments.
+- [x] Online-only countdown; no time served while disconnected. All earlier offline-elapsed references are superseded.
+- [x] Server-side admission, extension and discharge exports (trusted-resource boundary only; clinician and judicial authorization must be enforced by the caller).
+- [x] Inventory custody snapshot, storage state, return checkpoints, and restricted manual reconciliation exports.
+- [ ] Verify inventory clearing and restoration against the PowerMoves development server; no live testing has been performed.
+- [ ] Complete manual recovery workflow for interrupted custody transactions and document operator verification.
+- [ ] Map actual Parsons MLO coordinates; existing locations are upstream prison placeholders.
+- [ ] Implement facility activities and staff/patient interactions after coordinates are supplied.
+- [ ] Implement external /commit and /uncommit authorization separately in the customized qb-ambulancejob fork.
+- [ ] Complete integration tests for reconnect, restart, admission, release, inventory failure and unauthorized departure.
+
+**Do not deploy as production-ready.** This document tracks code implementation, not verified gameplay.
