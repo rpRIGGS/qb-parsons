@@ -26,8 +26,8 @@ Status: design specification for Stages 7–9, not yet implemented. Real Parsons
 
 - Integrate room access and the front security gate with the installed `qb-doorlock`, after checking its actual door identifiers and individual-access support.
 - A patient may access only their assigned room; medical staff retain authorized access. Remove patient access on discharge.
-- Original upstream `qb-prison/client/prisonbreak.lua` has three gate points, electronic-kit/gatecrack item checks, hacking minigame, `qb-doorlock:server:updateState`, lockdown, alerts, and an escape check that **clears prison jail status and returns jail items**.
-- Parsons should **adapt**, not erase, that design: a smaller, facility-appropriate breach/escape scenario, using the actual Parsons gate and installed doorlock. Never port upstream jail-status clearing, belongings return on escape, or automatic discharge.
+- Original upstream `qb-prison/client/prisonbreak.lua` has three gate points, electronic-kit/gatecrack item checks, hacking minigame, `qb-doorlock:server:updateState`, lockdown, alerts, and an escape check that **clears prison jail status and clears the jail-items record**. It does not return the belongings on escape.
+- Parsons should **adapt**, not erase, that design: a smaller, facility-appropriate breach/escape scenario, using the actual Parsons gate and installed doorlock. Never port upstream jail-status clearing, belongings-record clearing on escape, or automatic discharge.
 - Current `client/prisonbreak.lua` contains only perimeter monitoring; original hacking/gate functionality was removed from the fork. Stage 7 must intentionally rebuild/adapt it, with server-authoritative validation and no untrusted client ability to unlock doors.
 
 ## Activities and facility work
@@ -40,3 +40,15 @@ Status: design specification for Stages 7–9, not yet implemented. Real Parsons
 ## MLO config points to capture
 
 Reception PED, inside-gate arrival, guard shack PED, outside checkout destination, patient rooms and doors, front gate and doorlock ID, security perimeter, activity stations, cafeteria kitchen and food-storage room. Existing prison coordinates are placeholders, not final Parsons positions.
+
+## Verified upstream escape behavior (qbcore-fivem/qb-prison)
+
+Reviewed upstream `config.lua`, `client/prisonbreak.lua`, `client/main.lua`, and `server/main.lua` on 2026-11-06:
+
+- No configurable escape-time reset/continuation option was found in upstream `config.lua`.
+- Crossing the prison's 200-unit perimeter in `client/prisonbreak.lua` clears the client's `inJail` and `jailTime`, triggers security lockdown and an alert, calls `prison:server:SetJailStatus(0)`, and calls `prison:server:GiveJailItems(true)`.
+- The server's `GiveJailItems(true)` path clears the `jailitems` metadata **without returning the stored inventory**. This corrects the earlier mistaken description that escape returns belongings.
+- `client/main.lua` returns a player to prison on character load only when `injail > 0`. The upstream escape path sets it to zero, so it does not automatically re-admit that escapee on reconnect.
+- Other forks/versions may behave differently. Do not assume a configurable escape option exists without inspecting that fork.
+
+**Parsons decision:** Unauthorized departure must not clear `parsons_hold`, erase `parsons_belongings`, discharge the patient, or grant items. Keep court/medical authority intact; return/recovery is a separate staff/security workflow. Whether active treatment time pauses while the patient is outside remains an explicit open design decision. Ensure the server—not the escaping client's self-report—validates departure and any timekeeping state.
