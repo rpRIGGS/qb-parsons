@@ -1,6 +1,6 @@
 # qb-parsons Development Reference
 
-Planning checklist for PowerMoves RP Parsons Rehabilitation Center.
+Implementation and planning reference for PowerMoves RP Parsons Rehabilitation Center. **As of 2026-11-06, Stage 7 security code is partially implemented but not runtime-tested; finish its remaining code before revisiting Stages 1–4 and before Stage 8.** Checked items below may be broader release milestones, not an indication that no code exists.
 
 ## Foundation
 - [ ] Audit original qb-prison functionality and dependencies.
@@ -117,7 +117,7 @@ PS-MDT is the authoritative system for confidential medical and judicial records
 - Existing Parsons job definitions: https://github.com/rpRIGGS/PowerMoves-PSMDT/blob/main/planning-reference/development-jobs.lua
 - Previous Parsons records and credentials notes: https://github.com/rpRIGGS/PowerMoves-PSMDT/blob/main/planning-reference/parsons-sams-integration.md
 
-**Planning only:** No gameplay implementation is implied by this checklist. This file does not authorize work on other repositories.
+**Status:** Partial gameplay code is committed in qb-parsons; the checklist includes future work and runtime verification. This file does not authorize work on other repositories.
 
 ## Law enforcement, courtroom and medical transport integration
 
@@ -128,7 +128,7 @@ PS-MDT is the authoritative system for confidential medical and judicial records
 - [ ] Validate order/hold authority and Parsons intake server-side; do not reuse prison `injail` state or assume job name `police`.
 - [ ] Test optional officer/medical transport through RP before `/commit`, followed by direct Parsons admission; no scripted transport mode.
 
-See [INSTALLATION.md](INSTALLATION.md) for the earlier dependency audit (some policejob modification proposals are superseded by the decisions below) and the future deployment checklist. **No integration code has been changed yet.**
+See [INSTALLATION.md](INSTALLATION.md) for the earlier dependency audit (some policejob modification proposals are superseded by the decisions below) and the future deployment checklist. **The separate qb-ambulancejob command integration has not been completed. Parsons Stage 7 and PS Dispatch code are present.**
 
 ## Upstream dependency audit
 
@@ -161,7 +161,7 @@ These decisions supersede conflicting earlier planning text in this file and oth
 - A SAMS discharge cannot override an active SADOJ confinement order.
 - Parsons Grade 10 Psychiatrist may independently evaluate and admit within appropriate credentials; administrative grade or command access alone is not clinical/legal authorization.
 - Activities do not shorten hold time. Preserve lawful extensions or court orders when an earlier timer expires.
-- For timed holds, persist actual start and expiry timestamps rather than a prison-style online countdown. A legal hold's effective start may precede arrival when transport occurs; define this from the legal authorization, not a transportation menu.
+- For timed holds, persist accumulated eligible **online, checked-in, inside-property** time, not wall-clock expiry or a client-side prison countdown. A legal hold's effective start may precede arrival when transport occurs; define this from the legal authorization, not a transportation menu.
 
 ### Transport is RP before the command, not a script mode
 
@@ -203,3 +203,12 @@ An outstanding lawful commitment/hold should not be invalidated merely because R
 - [ ] Complete integration tests for reconnect, restart, admission, release, inventory failure and unauthorized departure.
 
 **Do not deploy as production-ready.** This document tracks code implementation, not verified gameplay.
+
+## Stage 7 implementation snapshot (2026-11-06)
+
+- Implemented source foundations: single configurable property polygon and low-aircraft detection; timed electrical and gate security compromise; incident history and server events; item checks for `electronickit` and `gatecrack`; `ox_lib` skill checks; qb-target/E-key interactions; optional PS Dispatch integration.
+- Reporting company and planned front-gate guard: **Gruppe Sechs** (Rockstar GTA security company).
+- PS Dispatch is the approved dispatch adapter. It is configured inside qb-parsons and has **no automatic legacy qb-policejob fallback**. Configurable codes/job filters and actual FiveM behavior require verification.
+- Still required in code: physical gate qb-doorlock adapter, security interaction validation/feedback review, and incident/escape consistency audit. Missing MLO mapping and door IDs are tracked separately and must not delay code review.
+- Next approved work order: **finish Stage 7 code → restructure Stages 1–4** for pending arrival, reception check-in, assigned room/belongings and authorized Gruppe Sechs guard-shack checkout → Stage 8.
+- See [PARSONS-ADMISSION-SECURITY-WORKFLOW.md](PARSONS-ADMISSION-SECURITY-WORKFLOW.md), [PARSONS-SERVER-MAPPING-CHECKLIST.md](PARSONS-SERVER-MAPPING-CHECKLIST.md), and [INSTALLATION.md](INSTALLATION.md).
