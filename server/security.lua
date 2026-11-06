@@ -5,6 +5,7 @@ local nextIncident = 0
 local aircraftSeen = {}
 local aircraftCooldown = {}
 local activeIncident = nil
+local incidentExpiresAt = 0
 
 local function withinProperty(pos)
     local z = Config.FacilityZone
@@ -25,12 +26,15 @@ local function withinProperty(pos)
     return inside
 end
 local function emit(kind, details)
-    if not activeIncident or kind == 'patient_return' then
+    if not activeIncident or os.time() >= incidentExpiresAt then
         nextIncident = nextIncident + 1
         activeIncident = nextIncident
     end
+    incidentExpiresAt = os.time() + 900
     local record = {id = activeIncident, kind = kind, time = os.time(), details = details or {}}
-    if kind == 'patient_return' then activeIncident = nil end
+    if kind == 'patient_return' or kind == 'security_communications_restored' then
+        activeIncident = nil
+    end
     incidents[#incidents + 1] = record
     if #incidents > 100 then table.remove(incidents, 1) end
     -- Trusted dispatch and SAMS adapters subscribe server-side, and decide recipients.
