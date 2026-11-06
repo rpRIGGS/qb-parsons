@@ -100,6 +100,38 @@ local function act(src, action)
     TriggerClientEvent('parsons:security:State', -1, state())
     return true
 end
+local attempts = {}
+local function actionPoint(action)
+    local cfg = Config.Security
+    if action == 'electrical_inside' then return cfg.electrical.inside end
+    if action == 'electrical_outside' then return cfg.electrical.outside end
+    if action == 'gate_hack' then return cfg.gate.hack end
+end
+local function hasTools(src, action)
+    local player = QBCore.Functions.GetPlayer(src)
+    if not player then return false end
+    local item = action == 'gate_hack' and 'gatecrack' or 'electronickit'
+    local found = player.Functions.GetItemByName(item)
+    return found and (found.amount or 0) >= 1
+end
+RegisterNetEvent('parsons:security:BeginAction', function(action)
+    local src = source
+    if type(action) ~= 'string' or not validPoint(src, actionPoint(action)) or not hasTools(src, action) then return end
+    local now = os.time()
+    if attempts[src] and now - attempts[src].started < 30 then return end
+    attempts[src] = {action = action, started = now}
+    TriggerClientEvent('parsons:security:StartAction', src, action)
+end)
+RegisterNetEvent('parsons:security:FinishAction', function(action, succeeded)
+    local src = source
+    local pending = attempts[src]
+    attempts[src] = nil
+    if not pending or pending.action ~= action or succeeded ~= true then return end
+    local elapsed = os.time() - pending.started
+    if elapsed < 10 or elapsed > 120 or not validPoint(src, actionPoint(action)) or not hasTools(src, action) then return end
+    act(src, action)
+end)
+AddEventHandler('playerDropped', function() attempts[source] = nil end)
 -- Deliberately restricted: no untrusted client event can assert a successful hack.
 exports('ApplyVerifiedSecurityAction', function(src, action)
     local caller = GetInvokingResource()
