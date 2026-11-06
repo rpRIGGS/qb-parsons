@@ -352,8 +352,11 @@ local function RoomOwner(roomId)
 end
 local function AssignRoom(Player, hold)
     local citizenid = Player.PlayerData.citizenid
+    -- A missing KVP is not proof of ownership: another online patient may still
+    -- hold this room after a restart. Reconcile the occupant before reusing it.
     if hold.roomId and not hold.roomReservationExpired and RoomById(hold.roomId)
-        and (not RoomOwner(hold.roomId) or RoomOwner(hold.roomId) == citizenid) then
+        and (not RoomOwner(hold.roomId) or RoomOwner(hold.roomId) == citizenid)
+        and not FindRoomOccupant(hold.roomId, citizenid) then
         return hold.roomId
     end
     for _, room in ipairs(Config.PatientRooms or {}) do
