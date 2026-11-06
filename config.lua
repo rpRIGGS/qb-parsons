@@ -31,7 +31,7 @@ Config.FacilityZone = { points = {}, minZ = nil, maxZ = nil } -- Parsons PolyZon
 -- Stage 7: one fenced-property polygon for patient eligibility and low-aircraft detection.
 -- maxZ is also the aircraft alert ceiling; minZ is the property floor.
 Config.Security = {
-    provider = 'Group Six',
+    provider = 'Gruppe Sechs',
     minigames = {
         electrical = {difficulty = {'easy', 'medium', 'medium'}, inputs = {'w', 'a', 's', 'd'}},
         gate = {difficulty = {'medium', 'medium', 'hard'}, inputs = {'w', 'a', 's', 'd'}}
