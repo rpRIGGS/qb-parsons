@@ -1,6 +1,7 @@
 -- PowerMoves-PSDispatch CustomAlert integration; one server-selected on-duty responder emits each alert.
 local labels = {
     security_communications_failure = 'Gruppe Sechs reports a security monitoring alarm at Parsons Rehabilitation Center',
+    failed_gate_hack = 'Gruppe Sechs reports attempted gate tampering at Parsons Rehabilitation Center',
     gate_security_compromised = 'Gruppe Sechs reports electronic gate tampering at Parsons Rehabilitation Center',
     unauthorized_aircraft = 'Gruppe Sechs reports unauthorized low aircraft over Parsons Rehabilitation Center',
     patient_departure = 'Gruppe Sechs reports confirmed unauthorized patient departure from Parsons',
