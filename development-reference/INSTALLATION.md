@@ -79,3 +79,10 @@
 - Optional PS Dispatch is implemented within qb-parsons; enable `Config.Security.PSDispatch.enabled` when `ps-dispatch` is installed. There is **no** legacy qb-policejob dispatch fallback. Calls and codes need live verification.
 - Physical qb-doorlock gate unlock/restore remains a code integration item; actual door IDs and positions are mapping inputs, not code blockers.
 - See [PARSONS-SERVER-MAPPING-CHECKLIST.md](PARSONS-SERVER-MAPPING-CHECKLIST.md) and [PARSONS-ADMISSION-SECURITY-WORKFLOW.md](PARSONS-ADMISSION-SECURITY-WORKFLOW.md).
+
+## Stage 7 code milestone — 2026-11-06
+
+- Source implementation is complete for the **configured** security interactions, server incident reporting, one property polygon, aircraft checks, gate compromise/relock adapter, and PS Dispatch reporting. `Config.Security.PSDispatch.enabled = true` is the approved default, with no legacy policejob fallback.
+- `electronickit` and `gatecrack` use ox_lib skill checks. Server validates action token, elapsed time, inventory and proximity, and acknowledges the applied result. A client skill-check result cannot be independently proven by the server; do not describe it as cheat-proof.
+- Gate relock retries when a doorlock resource or player is temporarily unavailable; best-effort relock is attempted on Parsons resource stop. Unexpected process crashes/restarts and installed qb-doorlock variations still need live testing and operational recovery procedures.
+- **Stage 7 code milestone is complete; runtime acceptance is not.** Before enabling mapped interactions in production: supply actual gate door IDs and Parsons MLO positions, test dispatch/doorlock/aircraft behavior in FiveM, and verify recovery after disconnects/restarts. Next source-development focus is the approved Stages 1–4 admission/reception/checkout refactor, not Stage 8.
