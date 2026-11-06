@@ -72,6 +72,9 @@ local function UpdateAbsence(Player, hold, inside)
     local grace = math.max(0, tonumber(Config.EscapeRoomGraceHours) or 48) * 3600
     if hold.absentSince and now - hold.absentSince >= grace and hold.roomReservationExpired ~= true then
         hold.roomReservationExpired = true
+        if hold.roomId and GetResourceKvpString('parsons_room_' .. hold.roomId) == Player.PlayerData.citizenid then
+            DeleteResourceKvp('parsons_room_' .. hold.roomId)
+        end
         changed = true
         -- A room manager must revoke access and free the assigned room atomically.
         TriggerEvent('parsons:server:RoomGraceExpired', Player.PlayerData.citizenid, hold.roomId)
@@ -312,14 +315,20 @@ local function FindRoomOccupant(roomId, exceptCitizenId)
     return nil
 end
 local roomLocks = {}
+local function RoomOwner(roomId)
+    local owner = GetResourceKvpString('parsons_room_' .. roomId)
+    return owner and owner ~= '' and owner or nil
+end
 local function AssignRoom(Player, hold)
     local citizenid = Player.PlayerData.citizenid
-    if hold.roomId and not hold.roomReservationExpired and RoomById(hold.roomId) then
+    if hold.roomId and not hold.roomReservationExpired and RoomById(hold.roomId)
+        and (not RoomOwner(hold.roomId) or RoomOwner(hold.roomId) == citizenid) then
         return hold.roomId
     end
     for _, room in ipairs(Config.PatientRooms or {}) do
         if type(room) == 'table' and type(room.id) == 'string' and room.id ~= ''
-            and not roomLocks[room.id] and not FindRoomOccupant(room.id, citizenid) then
+            and not roomLocks[room.id] and not RoomOwner(room.id)
+            and not FindRoomOccupant(room.id, citizenid) then
             return room.id
         end
     end
@@ -342,7 +351,7 @@ RegisterNetEvent('parsons:server:ReceptionCheckIn', function()
         TriggerClientEvent('QBCore:Notify', src, 'No available mapped patient room. Contact reception staff.', 'error')
         return
     end
-    if roomLocks[roomId] then return end
+    if roomLocks[roomId] or (RoomOwner(roomId) and RoomOwner(roomId) ~= Player.PlayerData.citizenid) then return end
     roomLocks[roomId] = true
     local stored, err = StoreBelongings(Player)
     if not stored then
@@ -350,6 +359,7 @@ RegisterNetEvent('parsons:server:ReceptionCheckIn', function()
         TriggerClientEvent('QBCore:Notify', src, err or 'Belongings storage failed; staff assistance required.', 'error')
         return
     end
+    SetResourceKvp('parsons_room_' .. roomId, Player.PlayerData.citizenid)
     hold.checkedIn = true
     hold.roomId = roomId
     hold.roomReservationExpired = false
@@ -397,6 +407,9 @@ exports('DischargePatient', function(targetId, authority)
     if hold.kind == 'court' and authority ~= 'judicial' then return false, 'judicial clearance required' end
     if hold.kind == 'medical' and authority ~= 'medical' and authority ~= 'judicial' then
         return false, 'medical clearance required'
+    end
+    if hold.roomId and RoomOwner(hold.roomId) == Player.PlayerData.citizenid then
+        DeleteResourceKvp('parsons_room_' .. hold.roomId)
     end
     SetHold(Player, nil)
     Player.Functions.Save()
