@@ -21,7 +21,8 @@ Config.Activities = {
 -- Activity coordinates remain unset until the Parsons MLO is mapped.
 -- No activity reduces a hold or grants money/items.
 Config.EscapeRoomGraceHours = 48 -- Real-world hours away before an escaped patient's room may be reassigned
-Config.PatientRooms = {} -- Map actual room identifiers and door access after inspecting Parsons MLO
+Config.PatientRooms = {} -- Entries: {id = 'actual-room-id', doorIds = {'actual-qb-doorlock-id'}}; map after MLO inspection
+Config.PatientRoomStaffJobTypes = {'ems'} -- Authorized on-duty medical staff; do not grant blanket LEO access
 Config.Reception = { coords = nil, ped = 's_m_m_doctor_01' } -- Initial check-in and return to treatment
 Config.GuardShack = { coords = nil, ped = 's_m_m_security_01' } -- Status and authorized checkout
 Config.Arrival = nil -- vector4 inside front gate, never reuse prison spawns
