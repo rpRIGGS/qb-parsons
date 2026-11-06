@@ -373,6 +373,35 @@ local function AssignRoom(Player, hold)
     return nil
 end
 
+-- Door-access policy for a future qb-doorlock adapter. No client can grant access.
+-- Rooms are not wired to qb-doorlock until real MLO door IDs are configured.
+local function RoomForDoor(doorId)
+    for _, room in ipairs(Config.PatientRooms or {}) do
+        if type(room) == 'table' and type(room.doorIds) == 'table' then
+            for _, configured in ipairs(room.doorIds) do
+                if configured == doorId then return room.id end
+            end
+        end
+    end
+end
+local function CanAccessRoomDoor(src, doorId)
+    local Player = GetPlayer(src)
+    if not Player then return false end
+    local roomId = RoomForDoor(doorId)
+    if not roomId then return false end
+    local job = Player.PlayerData.job
+    if job and job.onduty and (job.type == 'ems' or job.type == 'leo') then return true end
+    local hold = GetHold(Player)
+    return hold ~= nil and hold.checkedIn == true and not hold.roomReservationExpired
+        and not (hold.transport and hold.transport.active) and hold.roomId == roomId
+        and RoomOwner(roomId) == Player.PlayerData.citizenid
+end
+exports('CanAccessRoomDoor', function(src, doorId)
+    -- Read-only query; the doorlock integration must call server-side and enforce
+    -- this decision itself. This export does not unlock any door.
+    return CanAccessRoomDoor(tonumber(src), doorId)
+end)
+
 -- Reception intake is a distinct phase; server verifies proximity before custody changes.
 -- Room assignment remains blocked until the real mapped room allocator is implemented.
 RegisterNetEvent('parsons:server:ReceptionCheckIn', function()
