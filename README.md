@@ -10,7 +10,7 @@ A PowerMoves RP-specific QBCore FiveM resource adapted from the original [qb-pri
 
 qb-parsons is planned to transform prison mechanics into a small psychiatric and rehabilitation facility with voluntary treatment, involuntary evaluation holds, court-ordered commitments, counseling, and secure patient accommodation.
 
-**Development status:** Initial fork / planning. The features below are a roadmap, not a claim that they currently work. The underlying fork may still contain original qb-prison behavior until adapted.
+**Development status (2026-11-06):** Active implementation. Stage 7 security logic includes the facility polygon checks, temporary sabotage/gate compromise states, `electronickit` and `gatecrack` item requirements, ox_lib skill checks, and an optional PS Dispatch adapter identifying Gruppe Sechs as reporting security company. These features are **not yet live-tested**; MLO mapping and the physical qb-doorlock gate adapter remain pending. Next development priority: review and restructure Stages 1–4 admission, reception check-in, rooms and authorized guard-shack checkout, before Stage 8. Some earlier qb-prison code remains and must not be treated as complete Parsons behavior.
 
 ## Planned Features
 
@@ -99,3 +99,11 @@ The PowerMoves RP-only statement above is a compatibility and project-scope noti
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
+
+
+## Current implementation references
+
+- [Admission and security workflow / stage status](development-reference/PARSONS-ADMISSION-SECURITY-WORKFLOW.md)
+- [Server mapping and integration checklist](development-reference/PARSONS-SERVER-MAPPING-CHECKLIST.md)
+
+**Security integration:** `ox_lib` is required for current security skill checks. `qb-target` remains the target integration (E-key fallback when target mode is disabled). `ps-dispatch` is optional, controlled by `Config.Security.PSDispatch.enabled`, and has no legacy qb-policejob dispatch fallback. Security reports identify **Gruppe Sechs**; the front-gate security guard is planned as a Gruppe Sechs NPC. Item names and skill-check difficulty are configurable. No MLO coordinates or door IDs have been invented.
