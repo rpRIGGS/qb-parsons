@@ -6,6 +6,7 @@ local allowedResources = {['qb-ambulancejob'] = true}
 -- Operational commitment state only. PS-MDT remains the source for medical/legal records.
 -- QBCore metadata persists remaining seconds. Only connected playtime counts.
 local lastTick = {}
+local departureCooldown = {}
 local function GetPlayer(id)
     return QBCore.Functions.GetPlayer(tonumber(id))
 end
@@ -30,7 +31,8 @@ local function TickHold(Player)
     lastTick[src] = now
     local hold = GetHold(Player)
     if not hold or hold.remainingSeconds == nil or not previous then return hold end
-    local elapsed = math.max(0, math.min(now - previous, 60))
+    -- Cap long scheduler gaps to avoid counting downtime or lag as treatment time.
+    local elapsed = math.max(0, math.min(now - previous, 35))
     if elapsed == 0 then return hold end
     hold.remainingSeconds = math.max(0, hold.remainingSeconds - elapsed)
     Player.Functions.SetMetaData(METADATA_KEY, hold)
@@ -123,6 +125,7 @@ exports('DischargePatient', function(targetId, authority)
         return false, 'medical clearance required'
     end
     SetHold(Player, nil)
+    departureCooldown[Player.PlayerData.source] = nil
     lastTick[Player.PlayerData.source] = nil
     TriggerClientEvent('parsons:client:Discharge', Player.PlayerData.source)
     return true
@@ -151,9 +154,19 @@ RegisterNetEvent('parsons:server:ReportUnauthorizedDeparture', function()
     local src = source
     local Player = GetPlayer(src)
     if not Player or not GetHold(Player) then return end
-    -- No client-requested hold cancellation. Task 4 will add server-side
-    -- perimeter verification, throttling, and agency dispatch integration.
-    print(('[qb-parsons] Patient %s reported outside Parsons perimeter (unverified)'):format(Player.PlayerData.citizenid))
+    local center = Config.Locations.middle
+    local radius = Config.EscapeDetectionRadius or 200.0
+    if not center or radius <= 0 then return end
+    local ped = GetPlayerPed(src)
+    if not ped or ped == 0 then return end
+    local coords = GetEntityCoords(ped)
+    if #(coords.xy - vec2(center.x, center.y)) <= radius then return end
+    local now = os.time()
+    if departureCooldown[src] and now - departureCooldown[src] < 120 then return end
+    departureCooldown[src] = now
+    print(('[qb-parsons] Active patient %s departed Parsons perimeter'):format(Player.PlayerData.citizenid))
+    -- A future dispatch adapter can subscribe to this server-side event.
+    TriggerEvent('parsons:server:UnauthorizedDepartureVerified', src, Player.PlayerData.citizenid)
 end)
 
 -- Count only connected time. Persist progress in QBCore metadata every 30 seconds.
@@ -170,4 +183,5 @@ end)
 
 AddEventHandler('playerDropped', function()
     lastTick[source] = nil
+    departureCooldown[source] = nil
 end)
