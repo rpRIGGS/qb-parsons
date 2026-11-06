@@ -3,6 +3,22 @@ local QBCore = exports['qb-core']:GetCoreObject({'Functions'})
 local admitted = false
 local activeActivity = nil
 local sessionId = 0
+local activityScenario = nil
+local function StopActivityPresentation()
+    if activityScenario then
+        ClearPedTasks(PlayerPedId())
+        activityScenario = nil
+    end
+end
+local function StartActivityPresentation(id)
+    local definition = Config.Jobs[id]
+    local scenario = definition and definition.scenario
+    if type(scenario) ~= 'string' or scenario == '' then return end
+    local ped = PlayerPedId()
+    if IsPedInAnyVehicle(ped, false) or IsPedRagdoll(ped) then return end
+    TaskStartScenarioInPlace(ped, scenario, 0, true)
+    activityScenario = scenario
+end
 
 RegisterNetEvent('parsons:client:AdmissionState', function(value)
     admitted = value == true
@@ -10,6 +26,7 @@ RegisterNetEvent('parsons:client:AdmissionState', function(value)
     if not admitted and activeActivity then
         sessionId = sessionId + 1
         activeActivity = nil
+        StopActivityPresentation()
         TriggerServerEvent('parsons:server:CancelActivity')
     end
 end)
@@ -17,8 +34,10 @@ end)
 RegisterNetEvent('parsons:client:ActivityStatus', function(activity)
     sessionId = sessionId + 1
     local serial = sessionId
+    StopActivityPresentation()
     activeActivity = activity or nil
     if not activeActivity then return end
+    StartActivityPresentation(activity.id)
     local duration = tonumber(activity.durationSeconds) or 0
     local startedAt = GetGameTimer()
     QBCore.Functions.Notify((activity.label or 'Activity') .. ' started. Press Backspace to cancel.', 'primary')
@@ -110,4 +129,8 @@ CreateThread(function()
         end
         Wait(delay)
     end
+end)
+
+AddEventHandler('onResourceStop', function(resource)
+    if resource == GetCurrentResourceName() then StopActivityPresentation() end
 end)
