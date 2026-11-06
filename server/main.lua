@@ -193,7 +193,7 @@ local function ReturnBelongings(Player)
         data.returnIndex = index
         Player.Functions.SetMetaData(BELONGINGS_KEY, data)
         Player.Functions.Save()
-        local success = exports['qb-inventory']:AddItem(Player.PlayerData.source, item.name, item.amount, item.slot, item.info, 'qb-parsons:return-belongings')
+        local success = exports['qb-inventory']:AddItem(Player.PlayerData.source, item.name, item.amount, false, item.info, 'qb-parsons:return-belongings')
         Player.Functions.Save()
         if not success then return false, 'partial return: staff reconciliation required' end
     end
