@@ -56,12 +56,16 @@ local function UpdateAbsence(Player, hold, inside)
     local changed = false
     if inside then
         if hold.absentSince ~= nil then
+            hold.lastReturnedAt = now
             hold.absentSince = nil
             changed = true
+            TriggerEvent('parsons:server:PatientReturned', Player.PlayerData.source, Player.PlayerData.citizenid)
         end
     elseif hold.absentSince == nil then
         hold.absentSince = now
+        hold.lastDepartedAt = now
         changed = true
+        TriggerEvent('parsons:server:UnauthorizedDepartureVerified', Player.PlayerData.source, Player.PlayerData.citizenid)
     end
     local grace = math.max(0, tonumber(Config.EscapeRoomGraceHours) or 48) * 3600
     if hold.absentSince and now - hold.absentSince >= grace and hold.roomReservationExpired ~= true then
@@ -109,7 +113,8 @@ local function PublicState(hold)
         expired = expired,
         indefinite = hold.remainingSeconds == nil,
         checkedIn = hold.checkedIn == true,
-        roomReservationExpired = hold.roomReservationExpired == true
+        roomReservationExpired = hold.roomReservationExpired == true,
+        absent = hold.absentSince ~= nil
     }
 end
 
@@ -367,8 +372,8 @@ RegisterNetEvent('parsons:server:ReportUnauthorizedDeparture', function()
     if departureCooldown[src] and now - departureCooldown[src] < 120 then return end
     departureCooldown[src] = now
     print(('[qb-parsons] Active patient %s departed Parsons perimeter'):format(Player.PlayerData.citizenid))
-    -- A future dispatch adapter can subscribe to this server-side event.
-    TriggerEvent('parsons:server:UnauthorizedDepartureVerified', src, Player.PlayerData.citizenid)
+    -- Verification/alert is performed by the periodic authoritative monitor.
+    -- Client hints never create or reset an absence timestamp.
 end)
 
 -- Count only connected, checked-in time at server-verified Parsons positions.
