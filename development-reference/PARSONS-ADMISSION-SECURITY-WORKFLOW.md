@@ -1,6 +1,6 @@
 # Parsons admission, checkout, rooms and security — approved design handoff
 
-Status: design specification for Stages 7–9, not yet implemented. Real Parsons MLO coordinates and actual qb-doorlock configuration are pending.
+Status (2026-11-06): approved design plus partial Stage 7 implementation; not live-tested. Real Parsons MLO coordinates and actual qb-doorlock configuration are pending. Stages 1–4 require restructuring before Stage 8.
 
 ## Separate physical locations
 
@@ -115,8 +115,16 @@ Normal security remains unlocked from lockdown unless a genuine breach warrants 
 ## Stage 7 security implementation continuation
 
 - Optional `Config.Security.PSDispatch.enabled` (default false) and configurable dispatch codes/jobs; the client adapter uses Project Sloth's verified `exports['ps-dispatch']:CustomAlert` interface, and the server selects an on-duty police responder to publish each alert once. This is a configurable police alert, not yet an SAMS/SADOJ record integration.
-- Electrical and gate actions now have configurable qb-target/E-key interaction points, a 12-second progress interaction, required `electronickit` or `gatecrack`, and server-verified distance, inventory, action identity and elapsed time. A cancelled attempt does not alter security state. The minigame remains a progress-based bypass; actual gate-door unlock is intentionally delegated to `parsons:security:GateStateChanged` until the mapped qb-doorlock ID and installed API are known.
+- Electrical and gate actions now have configurable qb-target/E-key interaction points, an ox_lib skill-check minigame, required `electronickit` or `gatecrack`, and server-verified distance, inventory, action identity and elapsed time. A cancelled attempt does not alter security state. The skill checks use configurable electrical/gate difficulty and input keys; actual gate-door unlock is intentionally delegated to `parsons:security:GateStateChanged` until the mapped qb-doorlock ID and installed API are known.
 - Security state has timed power/gate compromise and restoration, server event updates, a limited history, and correlated incident identifiers. Patient departure/return security events now fire after metadata persistence.
 - The same property polygon checks player-piloted low aircraft, without a second zone.
 - **Stage 7 remaining runtime-dependent work:** configure the Parsons property polygon, electrical/gate positions, doorlock identifiers and map lighting capabilities; wire verified qb-doorlock API; validate server-side aircraft natives, PS Dispatch calls, game interaction and staff/medical alert behavior in FiveM. Do not describe Stage 7 as fully live-tested or operational before these checks.
 - **Required next development milestone before Stage 8:** restructure Stages 1–4 into pending arrival, reception check-in/belongings and authorized guard-shack checkout. This is an explicit user-approved order.
+
+## Latest decisions — 2026-11-06
+
+- **Security company:** Rockstar's **Gruppe Sechs** (not Group Six). The guard-shack NPC at the front gate must represent Gruppe Sechs. Police dispatch alerts must identify **Gruppe Sechs as the reporting company**, rather than inventing a generic security-check caller. Group-wide notifications beyond Parsons are future scope.
+- **Items:** electrical tampering requires configurable `electronickit`; gate hacking requires configurable `gatecrack`. No thermite or general repair kit for these actions.
+- **ox_lib:** loaded in `fxmanifest.lua` and required for the configurable security `lib.skillCheck` minigames; planned for reception and guard-shack menus when Stages 1–4 are rebuilt. QBCore, qb-target and customized qb-inventory remain.
+- **Dispatch:** PS Dispatch adapter is coded inside qb-parsons (`server/security.lua`, `client/dispatch.lua`), optional through `Config.Security.PSDispatch.enabled`. No automatic qb-policejob legacy fallback. The client CustomAlert bridge and configured codes require live server validation.
+- **Current outstanding code:** physical gate qb-doorlock integration, remaining security validation/feedback review, and end-to-end incident review. Missing MLO positions and installed door IDs are separately tracked as runtime mapping dependencies, not reasons to block source-code progress.
