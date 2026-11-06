@@ -131,6 +131,11 @@ local function SetupGuard()
     SetEntityInvincible(guardPed, false)
     SetBlockingOfNonTemporaryEvents(guardPed, true)
     TaskStartScenarioInPlace(guardPed, 'WORLD_HUMAN_GUARD_STAND', 0, true)
+    GiveWeaponToPed(guardPed, joaat((Config.Security.guard and Config.Security.guard.weapon) or 'WEAPON_NIGHTSTICK'), 1, false, true)
+    SetPedFleeAttributes(guardPed, 0, false)
+    SetPedCombatAttributes(guardPed, 46, false)
+    SetPedCombatRange(guardPed, 0)
+    SetPedSeeingRange(guardPed, 12.0)
     exports['qb-target']:AddTargetEntity(guardPed, {
         options = {
             {icon = 'fas fa-car', label = 'Check out patient for court transport',
@@ -146,6 +151,52 @@ RegisterNetEvent('parsons:client:TransportState', function(state)
     admitted = true
     QBCore.Functions.Notify(state.transportActive and 'Court transport authorized. Your hold is paused.'
         or 'Court transport completed. Report to treatment.', 'primary')
+end)
+
+-- Local guard life cycle: defensive nightstick, no pursuit, and no respawn while
+-- a player is within the configured clear radius. Coordinates are MLO-supplied.
+local guardDeathAt = nil
+local guardReportedDown = false
+local guardReportedAssault = false
+local function PlayersNearGuard(radius)
+    local point = Config.GuardShack and Config.GuardShack.coords
+    if not point then return true end
+    for _, player in ipairs(GetActivePlayers()) do
+        local ped = GetPlayerPed(player)
+        if ped ~= 0 and DoesEntityExist(ped)
+            and #(GetEntityCoords(ped) - vector3(point.x, point.y, point.z)) < radius then
+            return true
+        end
+    end
+    return false
+end
+CreateThread(function()
+    while true do
+        Wait(2000)
+        if guardPed and DoesEntityExist(guardPed) then
+            if IsPedDeadOrDying(guardPed, true) then
+                if not guardReportedDown then
+                    guardReportedDown = true
+                    TriggerServerEvent('parsons:security:GuardThreat', 'guard_down')
+                end
+                guardDeathAt = guardDeathAt or GetGameTimer()
+                if GetGameTimer() - guardDeathAt >= (tonumber(Config.Security.guard.respawnSeconds) or 300) * 1000
+                    and not PlayersNearGuard(tonumber(Config.Security.guard.clearRadius) or 35.0) then
+                    if Config.UseTarget then exports['qb-target']:RemoveTargetEntity(guardPed) end
+                    DeleteEntity(guardPed)
+                    guardPed = nil
+                    guardDeathAt = nil
+                    guardReportedDown = false
+                    guardReportedAssault = false
+                    SetupGuard()
+                end
+            elseif HasEntityBeenDamagedByAnyPed(guardPed) and not guardReportedAssault then
+                guardReportedAssault = true
+                TriggerServerEvent('parsons:security:GuardThreat', 'guard_assault')
+                ClearEntityLastDamageEntity(guardPed)
+            end
+        end
+    end
 end)
 
 RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
