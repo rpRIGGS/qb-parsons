@@ -27,8 +27,8 @@ The example coordinates are NOT installed as active stations.
 ## Remaining Stage 6 work
 - Map real therapy, recreation and rehabilitation locations.
 - Test `qb-target` zones and server distance enforcement.
-- Add an explicit cancellation UI and progress presentation.
-- Test reconnect, resource restart, discharge and moving away mid-activity.
+- Confirm the countdown/help-text UI, Backspace cancellation, and E-key fallback in FiveM.
+- Test activity resynchronization after client reload, reconnect, resource restart, discharge and moving away mid-activity.
 - Decide whether staff-led sessions need a separate authorization workflow.
 - Define optional activity history/clinical documentation separately from the operational activity system.
 
@@ -44,3 +44,12 @@ Stage 5 inventory/reconnect behavior still requires PowerMoves development-serve
 ## qb-spawn installation integration note
 
 The existing qb-spawn jail check must also recognize active `PlayerData.metadata.parsons_hold` (`type(hold) == 'table' and hold.active == true`). The original `injail` behavior must remain unchanged. Active Parsons patients should bypass normal spawn choices and return to Parsons. Add a precise patch/snippet after reviewing the server's actual qb-spawn version; do not overwrite qb-spawn from this repository.
+
+## Further Stage 6 implementation
+
+- Live help-text countdown and Backspace cancellation for active patient sessions.
+- E-key interaction fallback when `UseTarget` is disabled; `qb-target` remains the preferred interaction.
+- Server activity-status request permits client state resynchronization after admission or character load, without granting an activity or bypassing validation.
+- The `README.md` now carries the `qb-spawn` installation requirement; the actual installed qb-spawn version must be inspected before writing a drop-in patch.
+
+**Remaining:** Real MLO station positions, in-server testing, and a decision on whether staff-led therapy and clinical history belong in Stage 8 / SAMS integration rather than the patient activity engine. No claim of FiveM verification.
