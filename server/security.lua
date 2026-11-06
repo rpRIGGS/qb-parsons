@@ -32,6 +32,7 @@ local function emit(kind, details)
     end
     incidentExpiresAt = os.time() + 900
     local record = {id = activeIncident, kind = kind, time = os.time(), details = details or {}}
+    if kind == 'security_communications_failure' then record.details.monitoringProvider = Config.Security.provider end
     if kind == 'patient_return' or kind == 'security_communications_restored' then
         activeIncident = nil
     end
@@ -112,7 +113,8 @@ end
 local function hasTools(src, action)
     local player = QBCore.Functions.GetPlayer(src)
     if not player then return false end
-    local item = action == 'gate_hack' and 'gatecrack' or 'electronickit'
+    local cfg = Config.Security
+    local item = action == 'gate_hack' and cfg.gate.item or cfg.electrical.item
     local found = player.Functions.GetItemByName(item)
     return found and (found.amount or 0) >= 1
 end
@@ -130,7 +132,7 @@ RegisterNetEvent('parsons:security:FinishAction', function(action, token, succee
     attempts[src] = nil
     if not pending or pending.action ~= action or pending.token ~= token or succeeded ~= true then return end
     local elapsed = os.time() - pending.started
-    if elapsed < 10 or elapsed > 120 or not validPoint(src, actionPoint(action)) or not hasTools(src, action) then return end
+    if elapsed < 1 or elapsed > 120 or not validPoint(src, actionPoint(action)) or not hasTools(src, action) then return end
     act(src, action)
 end)
 AddEventHandler('playerDropped', function() attempts[source] = nil end)
