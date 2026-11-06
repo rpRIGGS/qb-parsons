@@ -87,3 +87,11 @@ Development order: complete Stage 6 non-MLO logic; implement pending admission a
 ## Stage 6 code checkpoint
 
 The activity subsystem now uses server-side completion, validates the patient's active checked-in hold and station proximity, maintains per-admission participation history (last 100 completions), enforces cooldowns, and supports optional configured stress relief. All activity station coordinates remain deliberately unmapped. Stage 6 cannot be considered live-verified until the facility is mapped and the FiveM runtime is tested. Future presentation work may add activity-specific animations and props without changing server authority.
+
+## Stage 6 implementation complete — pending in-game validation
+
+- Activity definitions cover therapy, recreation, rehabilitation, swimming, tennis, yoga, meditation, gardening, groundskeeping, laundry, kitchen preparation, dishwashing, restocking and cleaning.
+- Target and E-key interactions share the same server-authoritative station checks, active admission checks, duration and cooldown logic.
+- Server completes elapsed sessions while the patient remains eligible and at the station, stores the most recent 100 participation entries on the admission, and optionally reduces stress by a capped configured amount. Activities never pay or shorten commitments.
+- Configurable GTA scenario presentation is supported where assigned; presentation is cleaned up on cancellation, completion, character unload and resource stop. Unmapped or unsupported scenarios can remain unset.
+- Activity station locations are inactive placeholders. In-game verification remains outstanding, not a reason to reopen the Stage 6 code milestone. Proceed to Stage 7 security and recovery implementation.
