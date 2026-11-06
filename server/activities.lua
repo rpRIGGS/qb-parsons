@@ -8,7 +8,7 @@ local function sendStatus(src, session)
         TriggerClientEvent('parsons:client:ActivityStatus', src, false)
         return
     end
-    local definition = Config.Jobs[session.id]
+    local definition = Config.Activities[session.id]
     TriggerClientEvent('parsons:client:ActivityStatus', src, {
         id = session.id,
         token = session.token,
@@ -28,7 +28,7 @@ local function patient(src)
     return p
 end
 local function nearStation(src, id)
-    local station = Config.Locations.jobs and Config.Locations.jobs[id]
+    local station = Config.Locations.activities and Config.Locations.activities[id]
     if not station or not station.coords then return false end
     local ped = GetPlayerPed(src)
     if not ped or ped == 0 then return false end
@@ -37,7 +37,7 @@ local function nearStation(src, id)
 end
 RegisterNetEvent('parsons:server:StartActivity', function(id)
     local src = source
-    local def = type(id) == 'string' and Config.Jobs[id]
+    local def = type(id) == 'string' and Config.Activities[id]
     if not def or not patient(src) or not nearStation(src, id) then return end
     if active[src] then return end
     local now = os.time()
@@ -54,7 +54,7 @@ local function complete(src, session)
         cancel(src)
         return
     end
-    local def = Config.Jobs[session.id]
+    local def = Config.Activities[session.id]
     if not def then cancel(src) return end
     active[src] = nil
     local hold = Player.PlayerData.metadata.parsons_hold
