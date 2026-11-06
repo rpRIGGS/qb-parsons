@@ -151,8 +151,9 @@ local function StoreBelongings(Player)
         status = 'storing', items = snapshot, storedAt = os.time()
     })
     Player.Functions.Save()
-    Player.Functions.ClearInventory()
+    local cleared = Player.Functions.ClearInventory()
     Player.Functions.Save()
+    if cleared == false then return false, 'inventory clear failed; staff reconciliation required' end
     for _, item in pairs(Player.PlayerData.items or {}) do
         if item and item.name and (tonumber(item.amount) or 0) > 0 then
             print(('[qb-parsons] Inventory not cleared for %s; admission blocked for reconciliation'):format(Player.PlayerData.citizenid))
@@ -160,6 +161,7 @@ local function StoreBelongings(Player)
         end
     end
     local data = GetBelongings(Player)
+    if not data or data.status ~= 'storing' then return false, 'custody record changed during storage' end
     data.status = 'stored'
     Player.Functions.SetMetaData(BELONGINGS_KEY, data)
     Player.Functions.Save()
@@ -221,6 +223,7 @@ exports('ExtendMedicalHold', function(targetId, phase)
     local days = durations[phase]
     local currentTotal = ({evaluation = 3, evaluation_extension = 7, treatment_extension = 28})[hold.phase]
     if not days or not currentTotal or days <= currentTotal then return false, 'invalid extension' end
+    if type(hold.remainingSeconds) ~= 'number' then return false, 'invalid hold duration' end
     local served = currentTotal * DAY_SECONDS - hold.remainingSeconds
     hold.remainingSeconds = math.max(0, days * DAY_SECONDS - served)
     hold.phase = phase
