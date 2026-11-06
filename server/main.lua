@@ -97,6 +97,30 @@ exports('GetBelongingsStatus', function(targetId)
     return data and data.status or 'none'
 end)
 
+-- A trusted inventory adapter may record custody only after successfully
+-- removing and verifying the items in the configured qb-inventory.
+exports('RecordStoredBelongings', function(targetId, items)
+    if not IsTrustedCaller() then return false, 'untrusted resource' end
+    local Player = GetPlayer(targetId)
+    if not Player or not GetHold(Player) then return false, 'patient not committed' end
+    if GetBelongings(Player) then return false, 'belongings already stored' end
+    if type(items) ~= 'table' then return false, 'invalid belongings' end
+    local snapshot = {}
+    for _, item in pairs(items) do
+        if type(item) ~= 'table' or type(item.name) ~= 'string' or
+            type(item.amount) ~= 'number' or item.amount < 1 then
+            return false, 'invalid item'
+        end
+        snapshot[#snapshot + 1] = {
+            name = item.name, amount = item.amount, info = item.info, slot = item.slot
+        }
+    end
+    Player.Functions.SetMetaData(BELONGINGS_KEY, {
+        status = 'stored', items = snapshot, storedAt = os.time()
+    })
+    return true
+end)
+
 -- Invoked by a trusted server resource only. Never expose admission through a client event.
 -- Integration must validate credential, legal authority and patient selection BEFORE calling.
 exports('AdmitPatient', function(targetId, kind, phase, days)
