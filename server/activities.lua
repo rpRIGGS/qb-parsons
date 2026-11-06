@@ -55,7 +55,12 @@ RegisterNetEvent('parsons:server:FinishActivity', function(id, token)
         cancel(src)
         return
     end
-    if os.time() < session.finishAt then return end
+    if os.time() < session.finishAt then
+        -- Client and server clocks can disagree at the finish boundary.
+        -- Resync instead of leaving the activity stuck indefinitely.
+        sendStatus(src, session)
+        return
+    end
     active[src] = nil
     cooldowns[src] = cooldowns[src] or {}
     cooldowns[src][id] = os.time() + math.max(0, math.floor(tonumber(Config.Jobs[id].cooldownSeconds) or 0))
