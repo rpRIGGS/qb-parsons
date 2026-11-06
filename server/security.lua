@@ -63,7 +63,17 @@ AddEventHandler('parsons:server:PatientReturned', function(src, citizenid)
     emit('patient_return', {citizenid = citizenid})
 end)
 -- Server-owned security state; interactions must be validated before invoking.
-local powerUntil, gateUntil = 0, 0
+local powerUntil, gateUntil, alarmUntil = 0, 0, 0
+local alarmReason = nil
+local function raiseAlarm(reason)
+    local duration = math.max(60, tonumber(Config.Security.alarm and Config.Security.alarm.durationSeconds) or 300)
+    if os.time() >= alarmUntil then
+        alarmReason = reason
+        alarmUntil = os.time() + duration
+        TriggerClientEvent('parsons:security:AlarmState', -1, true, reason)
+        TriggerEvent('parsons:security:AlarmChanged', true, reason)
+    end
+end
 local gateActor = nil
 local gateNeedsRelock = false
 local lastMonitoringAlert = 0
@@ -88,7 +98,7 @@ local function syncGate(locked)
 end
 local function state()
     local now = os.time()
-    return {powerFailure = now < powerUntil, gateCompromised = now < gateUntil}
+    return {powerFailure = now < powerUntil, gateCompromised = now < gateUntil, alarmActive = now < alarmUntil, alarmReason = now < alarmUntil and alarmReason or nil}
 end
 local function validPoint(src, point)
     if not point or type(point.x) ~= 'number' or type(point.y) ~= 'number' or type(point.z) ~= 'number' then return false end
@@ -113,6 +123,7 @@ local function act(src, action)
         gateUntil = now + math.max(30, tonumber(cfg.gate.compromisedSeconds) or 120)
         gateActor = src
         gateNeedsRelock = syncGate(false)
+        raiseAlarm('gate_security_compromised')
         emit('gate_security_compromised', {gateUntil = gateUntil})
     else
         return false
@@ -151,11 +162,41 @@ RegisterNetEvent('parsons:security:FinishAction', function(action, token, succee
     local pending = attempts[src]
     attempts[src] = nil
     if not pending or pending.action ~= action or pending.token ~= token then return end
-    if succeeded ~= true then return end
+    if succeeded ~= true then
+        if action == 'gate_hack' and validPoint(src, actionPoint(action)) then
+            raiseAlarm('failed_gate_hack')
+            emit('failed_gate_hack', {coords = actionPoint(action)})
+        end
+        return
+    end
     local elapsed = os.time() - pending.started
     if elapsed < 1 or elapsed > 120 or not validPoint(src, actionPoint(action)) or not hasTools(src, action) then return end
     local applied = act(src, action)
     TriggerClientEvent('parsons:security:ActionResult', src, applied == true)
+end)
+RegisterNetEvent('parsons:security:ResetAlarm', function(index)
+    local src = source
+    local cfg = Config.Security and Config.Security.alarm
+    if not cfg or type(index) ~= 'number' or index % 1 ~= 0 then return end
+    local point = cfg.resetPoints and cfg.resetPoints[index]
+    if not validPoint(src, point) then return end
+    local player = QBCore.Functions.GetPlayer(src)
+    local job = player and player.PlayerData and player.PlayerData.job
+    if not job or not job.onduty then return end
+    local allowed = false
+    for _, kind in ipairs(cfg.resetJobTypes or {}) do
+        if job.type == kind then allowed = true; break end
+    end
+    if not allowed or os.time() >= alarmUntil then return end
+    alarmUntil = 0
+    alarmReason = nil
+    TriggerClientEvent('parsons:security:AlarmState', -1, false)
+    TriggerEvent('parsons:security:AlarmChanged', false, 'authorized_reset')
+    emit('security_alarm_reset', {by = player.PlayerData.citizenid, coords = {x = point.x, y = point.y, z = point.z}})
+    TriggerClientEvent('parsons:security:State', -1, state())
+end)
+RegisterNetEvent('parsons:security:RequestState', function()
+    TriggerClientEvent('parsons:security:State', source, state())
 end)
 AddEventHandler('playerDropped', function() attempts[source] = nil end)
 -- Deliberately restricted: no untrusted client event can assert a successful hack.
@@ -173,6 +214,12 @@ CreateThread(function()
     while true do
         Wait(2000)
         local current = state()
+        if alarmUntil > 0 and os.time() >= alarmUntil then
+            alarmUntil = 0
+            alarmReason = nil
+            TriggerClientEvent('parsons:security:AlarmState', -1, false)
+            TriggerEvent('parsons:security:AlarmChanged', false, 'failsafe_timeout')
+        end
         if wasPower and not current.powerFailure then emit('security_communications_restored') end
         if wasGate and not current.gateCompromised then
             if gateNeedsRelock then gateNeedsRelock = not syncGate(true) end
