@@ -95,6 +95,8 @@ local function UpdateAbsence(Player, hold, inside)
         if hold.transport and hold.transport.active then return hold end
         if hold.absentSince ~= nil then
             hold.lastReturnedAt = now
+            -- Keep the reentry inventory-clear obligation until reception completes it.
+            hold.reentryInventoryPending = true
             hold.absentSince = nil
             hold.absenceReason = nil
             if hold.roomId and not hold.roomReservationExpired then
@@ -106,6 +108,7 @@ local function UpdateAbsence(Player, hold, inside)
     elseif hold.absentSince == nil and not (hold.transport and hold.transport.active)
         and lastInside[Player.PlayerData.source] == true then
         hold.absentSince = now
+        hold.reentryInventoryPending = true
         hold.lastDepartedAt = now
         MarkRoomAbsence(hold.roomId, Player.PlayerData.citizenid, now)
         changed = true
@@ -680,7 +683,7 @@ RegisterNetEvent('parsons:server:ReceptionCheckIn', function()
     local hold = GetHold(Player)
     if not hold or hold.kind == 'outpatient' then return end
     if hold.checkedIn and not hold.roomReservationExpired then
-        if hold.absentSince then
+        if hold.absentSince or hold.reentryInventoryPending then
             local cleared, clearError = ClearReentryInventory(Player)
             if not cleared then
                 TriggerClientEvent('QBCore:Notify', src, clearError, 'error')
@@ -688,6 +691,7 @@ RegisterNetEvent('parsons:server:ReceptionCheckIn', function()
             end
             hold.absentSince = nil
             hold.absenceReason = nil
+            hold.reentryInventoryPending = nil
             SetHold(Player, hold)
             Player.Functions.Save()
         end
@@ -712,6 +716,7 @@ RegisterNetEvent('parsons:server:ReceptionCheckIn', function()
         hold.roomReservationExpired = false
         hold.absentSince = nil
         hold.absenceReason = nil
+        hold.reentryInventoryPending = nil
         SetHold(Player, hold)
         Player.Functions.Save()
         roomLocks[roomId] = nil
