@@ -210,7 +210,12 @@ RegisterNetEvent('parsons:security:ResetAlarm', function(index)
     TriggerClientEvent('parsons:security:State', -1, state())
 end)
 RegisterNetEvent('parsons:security:RequestState', function()
-    TriggerClientEvent('parsons:security:State', source, state())
+    local src = source
+    TriggerClientEvent('parsons:security:State', src, state())
+    local current = state()
+    if current.alarmActive then
+        TriggerClientEvent('parsons:security:AlarmState', src, true, current.alarmReason)
+    end
 end)
 AddEventHandler('playerDropped', function()
     attempts[source] = nil
