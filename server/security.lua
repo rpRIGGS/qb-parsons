@@ -169,6 +169,8 @@ RegisterNetEvent('parsons:security:BeginAction', function(action)
         TriggerClientEvent('parsons:security:BeginDenied', src, 'A security bypass is already in progress.')
         return
     end
+    -- Expired attempts must not lock a player out of further actions.
+    if attempts[src] then attempts[src] = nil end
     if (action == 'gate_hack' and now < gateUntil)
         or ((action == 'electrical_inside' or action == 'electrical_outside') and now < powerUntil) then
         TriggerClientEvent('parsons:security:BeginDenied', src, 'Security system already compromised. Wait for restoration.')
