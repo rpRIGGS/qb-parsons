@@ -22,9 +22,19 @@ RegisterNetEvent('parsons:security:StartAction', function(key, token)
     local settings = Config.Security.minigames
     local spec = key == 'gate_hack' and settings.gate or settings.electrical
     local success = lib.skillCheck(spec.difficulty, spec.inputs)
+    if success then
+        -- Match the server-observed minimum duration without trusting client timing.
+        success = lib.progressCircle({
+            duration = (math.max(2, tonumber(Config.Security.minimumActionSeconds) or 5) + 1) * 1000,
+            label = 'Completing security bypass',
+            position = 'bottom',
+            canCancel = true,
+            disable = {move = true, car = true, combat = true}
+        }) == true
+    end
     busy = false
     if not success then
-        lib.notify({title = 'Security bypass', description = 'Bypass unsuccessful.', type = 'error'})
+        lib.notify({title = 'Security bypass', description = 'Bypass unsuccessful or interrupted.', type = 'error'})
     end
     TriggerServerEvent('parsons:security:FinishAction', key, token, success == true)
 end)
