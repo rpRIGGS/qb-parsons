@@ -309,6 +309,42 @@ local function ReturnBelongings(Player)
     return true
 end
 
+-- Court-treatment progress is a recommendation workflow, NOT a discharge or transfer.
+-- The court remains authoritative; this stores a bounded audit trail on the hold.
+local REVIEW_RECOMMENDATIONS = {
+    residential = true, outpatient = true, secure = true,
+    continue_treatment = true, bolingbroke_referral = true
+}
+exports('RecordJudicialTreatmentReview', function(targetId, recommendation, note, reviewer)
+    if not IsTrustedCaller() then return false, 'untrusted resource' end
+    if type(recommendation) ~= 'string' or not REVIEW_RECOMMENDATIONS[recommendation] then
+        return false, 'invalid recommendation'
+    end
+    if type(note) ~= 'string' or #note < 5 or #note > 2000 then return false, 'invalid review note' end
+    if type(reviewer) ~= 'string' or #reviewer < 2 or #reviewer > 100 then
+        return false, 'reviewer identifier required'
+    end
+    local Player = GetPlayer(targetId)
+    if not Player then return false, 'patient offline' end
+    local hold = TickHold(Player)
+    if not hold or hold.kind ~= 'court' then return false, 'no active judicial hold' end
+    local reviews = type(hold.treatmentReviews) == 'table' and hold.treatmentReviews or {}
+    reviews[#reviews + 1] = {
+        at = os.time(), recommendation = recommendation, note = note,
+        reviewer = reviewer, sourceResource = GetInvokingResource(), status = 'pending_judicial_review'
+    }
+    -- Keep recent review metadata bounded; long-term records belong in SADOJ/SAMS.
+    while #reviews > 20 do table.remove(reviews, 1) end
+    hold.treatmentReviews = reviews
+    SetHold(Player, hold)
+    Player.Functions.Save()
+    TriggerEvent('parsons:server:JudicialTreatmentReviewRecorded',
+        Player.PlayerData.source, Player.PlayerData.citizenid, reviews[#reviews])
+    print(('[qb-parsons] Judicial treatment review recorded for %s: %s'):format(
+        Player.PlayerData.citizenid, recommendation))
+    return true
+end)
+
 -- Invoked by a trusted server resource only. Never expose admission through a client event.
 -- Integration must validate credential, legal authority and patient selection BEFORE calling.
 exports('AdmitPatient', function(targetId, kind, phase, days)
