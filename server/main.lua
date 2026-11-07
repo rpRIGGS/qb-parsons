@@ -423,6 +423,48 @@ exports('AssignSecureRoom', function(targetId, roomId)
     return true
 end)
 
+-- Authorized clinical step-down from secure housing to an upstairs residential room.
+-- This changes only physical room assignment; it never modifies a court order.
+exports('AssignResidentialRoom', function(targetId, roomId)
+    if not IsTrustedCaller() then return false, 'untrusted resource' end
+    local Player = GetPlayer(targetId)
+    if not Player then return false, 'patient offline' end
+    local hold = TickHold(Player)
+    if not hold or not hold.checkedIn then return false, 'patient not checked in' end
+    if hold.roomReservationExpired then return false, 'patient must check in again' end
+    if hold.transport and hold.transport.active then return false, 'patient away on transport' end
+    if hold.absentSince or not InsideFacility(Player.PlayerData.source) then
+        return false, 'patient must be present inside Parsons'
+    end
+    local room = RoomById(roomId)
+    if not room or (room.housing ~= nil and room.housing ~= 'standard') then
+        return false, 'not a configured residential bedroom'
+    end
+    local citizenid = Player.PlayerData.citizenid
+    if roomLocks[roomId] then return false, 'room assignment in progress' end
+    local owner = RoomOwner(roomId)
+    if (owner and owner ~= citizenid) or FindRoomOccupant(roomId, citizenid) then
+        return false, 'residential room occupied'
+    end
+    if hold.roomId == roomId and owner == citizenid then return true end
+    roomLocks[roomId] = true
+    SetResourceKvp(RoomKey(roomId), citizenid)
+    SetResourceKvpInt(AbsenceKey(roomId), 0)
+    local previousRoom = hold.roomId
+    hold.roomId = roomId
+    hold.roomReservationExpired = false
+    hold.residentialHousingAssignedAt = os.time()
+    SetHold(Player, hold)
+    Player.Functions.Save()
+    if previousRoom ~= roomId then ClearRoomReservation(previousRoom, citizenid) end
+    roomLocks[roomId] = nil
+    print(('[qb-parsons] Residential assignment: patient %s, previous %s, assigned %s, caller %s'):format(
+        citizenid, tostring(previousRoom or 'none'), roomId, tostring(GetInvokingResource() or 'unknown')))
+    TriggerClientEvent('parsons:client:RoomAssignmentChanged', Player.PlayerData.source, PublicState(hold))
+    TriggerEvent('parsons:server:RoomAssigned', Player.PlayerData.source, citizenid, roomId)
+    return true
+end)
+
 -- Door-access policy for a future qb-doorlock adapter. No client can grant access.
 -- Rooms are not wired to qb-doorlock until real MLO door IDs are configured.
 local function RoomForDoor(doorId)
