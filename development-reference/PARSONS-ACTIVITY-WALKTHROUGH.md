@@ -28,8 +28,6 @@ For every station: (1) stand where the patient/staff will interact and capture `
 
 **Breakout barriers:** The perimeter sliding gate (`Parsons-Security ring`), the secure basement ward partition (`Parsons-Basement 11`, verify physical correspondence), and each assigned secure cell door (`Parsons-Basement 7` through `10`) are distinct security controls. A person breaking out a basement patient must have a physical route into the building and down to the ward; opening only the exterior gate does not free a patient behind locked basement doors. Document whether intermediate main-building doors require access and how the power/security system affects them.
 
-**Excluded storage/security room:** `Parsons-Basement 1`, `Parsons-Basement 2`, and `Parsons-Basement 4` are an unrelated locked storage/armory-like room and its partition, configured for the `arcadius` job. **Do not** automatically unlock or include these in a Parsons breakout, even during a power event. The actual basement patient partition is separate.
-
 **Electrical sabotage — two required mapping points, not optional omissions:**
 - [ ] **Interior power station / electrical panel:** `vector4(x, y, z, heading)` — exact target prop and room/access route: `________________`
 - [ ] **Exterior utility / power station:** `vector4(x, y, z, heading)` — exact target prop and access route: `________________`
@@ -37,7 +35,7 @@ For every station: (1) stand where the patient/staff will interact and capture `
 - [ ] **Security alarm reset at guard shack:** `vector4(x, y, z, heading)`: `________________`
 - [ ] **Security alarm reset at medical office:** `vector4(x, y, z, heading)`: `________________`
 
-**Open design decision, not implemented:** A successful electrical attack may temporarily release designated electronic security locks (front gate, secure ward partition, selected secure cell doors) for a configurable period, followed by restoration/relock. This is a proposed behavior from the latest walkthrough, **not yet approved as a precise unlock set or coded**. Never include Arcadius storage doors. Verify the installed qb-doorlock's state-change interface and power-loss/recovery behavior before implementing; an ordinary power failure should not be represented as automatically opening every lock.
+**Open design decision, not implemented:** A successful electrical attack may temporarily release designated electronic security locks (front gate, secure ward partition, selected secure cell doors) for a configurable period, followed by restoration/relock. This is a proposed behavior from the latest walkthrough, **not yet approved as a precise unlock set or coded**. Use only the explicitly approved Parsons patient-security doors. Verify the installed qb-doorlock's state-change interface and power-loss/recovery behavior before implementing; an ordinary power failure should not be represented as automatically opening every lock.
 
 **Laundry and cafeteria:** Existing qb-doorlock entries `Parsons-Service Building 1` (laundry), `2` (laundry-to-kitchen), `3` (kitchen storage), `4` (kitchen main), and `5` (cafe double doors) are already supplied. No need to remap the doors. Cafeteria patient meals/drinks are intended to use qb-shops, so collect only the actual shop/target counter positions and any necessary supply/work activity points, **not** invented cafeteria-employee NPC coordinates.
 
