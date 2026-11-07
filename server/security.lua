@@ -241,6 +241,7 @@ CreateThread(function()
             alarmReason = nil
             TriggerClientEvent('parsons:security:AlarmState', -1, false)
             TriggerEvent('parsons:security:AlarmChanged', false, 'failsafe_timeout')
+            TriggerClientEvent('parsons:security:State', -1, state())
         end
         if wasPower and not current.powerFailure then emit('security_communications_restored') end
         if wasGate and not current.gateCompromised then
