@@ -693,6 +693,11 @@ exports('DischargePatient', function(targetId, authority)
     if hold.kind == 'medical' and authority ~= 'medical' and authority ~= 'judicial' then
         return false, 'medical clearance required'
     end
+    local dischargeSnapshot = {
+        kind = hold.kind, phase = hold.phase, roomId = hold.roomId,
+        housingClassification = hold.housingClassification or 'standard',
+        dischargedAt = os.time(), authority = authority
+    }
     ClearRoomReservation(hold.roomId, Player.PlayerData.citizenid)
     SetHold(Player, nil)
     Player.Functions.Save()
@@ -706,6 +711,8 @@ exports('DischargePatient', function(targetId, authority)
     lastTick[Player.PlayerData.source] = nil
     lastEligible[Player.PlayerData.source] = nil
     lastInside[Player.PlayerData.source] = nil
+    TriggerEvent('parsons:server:PatientDischarged', Player.PlayerData.source,
+        Player.PlayerData.citizenid, dischargeSnapshot, returned)
     TriggerClientEvent('parsons:client:Discharge', Player.PlayerData.source)
     return true, returned and nil or ('discharged; belongings pending: ' .. tostring(returnError))
 end)
