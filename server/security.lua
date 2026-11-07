@@ -165,13 +165,19 @@ RegisterNetEvent('parsons:security:BeginAction', function(action)
         return
     end
     local now = os.time()
-    if attempts[src] and now - attempts[src].started < 120 then return end
+    if attempts[src] and now - attempts[src].started < 120 then
+        TriggerClientEvent('parsons:security:BeginDenied', src, 'A security bypass is already in progress.')
+        return
+    end
     if (action == 'gate_hack' and now < gateUntil)
         or ((action == 'electrical_inside' or action == 'electrical_outside') and now < powerUntil) then
         TriggerClientEvent('parsons:security:ActionResult', src, false, action)
         return
     end
-    if now < (lastActionAt[src] or 0) then return end
+    if now < (lastActionAt[src] or 0) then
+        TriggerClientEvent('parsons:security:BeginDenied', src, 'Security bypass equipment is cooling down.')
+        return
+    end
     lastActionAt[src] = now + math.max(5, tonumber(Config.Security.actionRetrySeconds) or 15)
     attempts[src] = {action = action, started = now, token = math.random(100000,999999)}
     TriggerClientEvent('parsons:security:StartAction', src, action, attempts[src].token)
