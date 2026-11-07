@@ -226,6 +226,10 @@ exports('GetBelongingsRecord', function(targetId)
         status = data.status,
         storedAt = data.storedAt,
         returnIndex = data.returnIndex,
+        dischargeStep = data.dischargeStep,
+        dischargeRetainedIndex = data.dischargeRetainedIndex,
+        dischargeRetained = data.dischargeRetained,
+        reentryClearStartedAt = data.reentryClearStartedAt,
         items = data.items
     }
 end)
