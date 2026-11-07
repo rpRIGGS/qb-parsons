@@ -43,6 +43,14 @@ RegisterNetEvent('parsons:client:ReceptionComplete', function(state)
     TriggerEvent('parsons:client:AdmissionState', true)
 end)
 
+-- A room transfer updates admission state without replaying check-in clothing changes.
+RegisterNetEvent('parsons:client:RoomAssignmentChanged', function(state)
+    if type(state) ~= 'table' or not state.active or not state.checkedIn then return end
+    hold = state
+    admitted = true
+    QBCore.Functions.Notify(('Your Parsons room assignment is now %s.'):format(tostring(state.roomId or 'pending')), 'primary')
+end)
+
 RegisterNetEvent('parsons:client:Discharge', function()
     -- A server-issued event is not by itself a substitute for authorization;
     -- the server must validate discharge before emitting it.
