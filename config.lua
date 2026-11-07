@@ -21,7 +21,21 @@ Config.Activities = {
 -- Activity coordinates remain unset until the Parsons MLO is mapped.
 -- No activity reduces a hold or grants money/items.
 Config.EscapeRoomGraceHours = 48 -- Real-world hours away before an escaped patient's room may be reassigned
-Config.PatientRooms = {} -- Entries: {id = 'actual-room-id', doorIds = {'actual-qb-doorlock-id'}}; map after MLO inspection
+Config.PatientRooms = { -- Only bedded rooms; padded observation rooms are excluded from routine allocation
+    {id = 'medical-1', housing = 'standard', doorIds = {'Parsons-Main Floor med ward 4'}},
+    {id = 'medical-2', housing = 'standard', doorIds = {'Parsons-Main Floor med ward 5'}},
+    {id = 'medical-3', housing = 'standard', doorIds = {'Parsons-Main Floor med ward 6'}},
+    {id = 'medical-4', housing = 'standard', doorIds = {'Parsons-Main Floor med ward 7'}},
+    {id = 'secure-1', housing = 'secure', doorIds = {'Parsons-Basement 7'}},
+    {id = 'secure-2', housing = 'secure', doorIds = {'Parsons-Basement 8'}},
+    {id = 'secure-3', housing = 'secure', doorIds = {'Parsons-Basement 9'}},
+    {id = 'secure-4', housing = 'secure', doorIds = {'Parsons-Basement 10'}},
+}
+Config.ObservationRooms = {
+    {id = 'observation-1', doorIds = {'Parsons-Basement 5'}},
+    {id = 'observation-secure', doorIds = {'Parsons-Basement 6'}}
+}
+Config.SecureWardGateDoorIds = {'Parsons-Basement 11'} -- verify partition in game
 Config.PatientRoomStaffJobTypes = {'ems'} -- Authorized on-duty medical staff; do not grant blanket LEO access
 Config.Reception = { coords = vector4(-1501.46, 849.16, 181.6, 249.1), additionalCoords = {vector4(-1514.51, 848.23, 181.6, 114.2)}, ped = 's_m_m_doctor_01' } -- Initial check-in and return to treatment
 Config.GuardShack = { coords = vector4(-1486.85, 881.13, 183.35, 341.37), ped = 's_m_m_security_01' } -- Status and authorized checkout
