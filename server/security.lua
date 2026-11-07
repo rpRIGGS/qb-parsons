@@ -188,7 +188,7 @@ RegisterNetEvent('parsons:security:FinishAction', function(action, token, succee
     local src = source
     local pending = attempts[src]
     if not pending or pending.action ~= action or pending.token ~= token then
-        TriggerClientEvent('parsons:security:ActionResult', src, false, action)
+        -- Do not let forged or stale completion packets cancel the real attempt.
         return
     end
     attempts[src] = nil
