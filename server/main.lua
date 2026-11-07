@@ -365,6 +365,7 @@ local function AssignRoom(Player, hold)
     end
     for _, room in ipairs(Config.PatientRooms or {}) do
         if type(room) == 'table' and type(room.id) == 'string' and room.id ~= ''
+            and (room.housing == nil or room.housing == 'standard') -- secure housing requires staff classification
             and not roomLocks[room.id] and not RoomOwner(room.id)
             and not FindRoomOccupant(room.id, citizenid) then
             return room.id
