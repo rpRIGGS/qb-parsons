@@ -393,7 +393,7 @@ local function CanAccessRoomDoor(src, doorId)
     local job = Player.PlayerData.job
     if job and job.onduty then
         for _, allowed in ipairs(Config.PatientRoomStaffJobTypes or {'ems'}) do
-            if job.type == allowed then return true end
+            if job.type == allowed or job.name == allowed then return true end
         end
     end
     local hold = GetHold(Player)
