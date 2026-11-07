@@ -64,3 +64,15 @@ Scope: qb-parsons operational implementation, with future SAMS.net and SADOJ.net
 - Fixed a real race: `UpdateAbsence` could reset `absentSince` automatically on crossing back inside before reception had cleared escaped inventory. `reentryInventoryPending` now persists independently until successful reception processing.
 - While pending, treatment countdown and patient-specific bedroom access are suspended. A room reservation is not itself revoked until the configured grace expiration; original admission inventory custody is not overwritten.
 - The physical qb-doorlock hook remains a later-stage fork integration, already documented separately. This does not block Task 1's operational workflow implementation.
+
+## Task 1 code-level closeout (2026-11-07)
+**Status: Task 1 implementation complete for agreed code scope; in-game QA pending.** Do not conflate this with live server certification.
+
+Final review caught and corrected:
+- `NormalizeHold` had still rejected all `voluntary` and `outpatient` records despite `BuildHold` accepting them. Fixed in `server/main.lua`.
+- Outpatient enrollment previously reused residential `Admit` client event, teleporting patients to Parsons. It now uses `OutpatientEnrolled` with no residential transport, intake, or clothing changes.
+- Outpatient closure no longer forces residential exit teleport or restores residential clothing.
+- Secure and residential transfer exports now reject transfers while `reentryInventoryPending` is set, consistent with countdown and room-door policy.
+- Earlier final-pass fix retains the reentry inventory clearance obligation after automatic absence tracking clears `absentSince`.
+
+Task 1 scope: authorized admission hold types, pending classification, room assignment and transfers, intake belongings custody, escaped reentry clearance, discharge and authorized return of belongings. The deferred qb-doorlock enforcement and broader ambulancejob integration remain later-stage work. In-game QA should cover all hold types, room allocation/reassignment, escaped reentry, custody interruption/reconciliation, and discharge; any discovered regression is a defect, not a reason to expand Task 1 scope.
