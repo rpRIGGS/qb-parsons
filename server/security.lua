@@ -177,8 +177,14 @@ RegisterNetEvent('parsons:security:FinishAction', function(action, token, succee
     -- server-observed minimum interaction duration and revalidate all conditions.
     local elapsed = os.time() - pending.started
     local minimum = math.max(2, math.floor(tonumber(Config.Security and Config.Security.minimumActionSeconds) or 5))
-    if elapsed > 120 or not validPoint(src, actionPoint(action)) or not hasTools(src, action) then return end
-    if succeeded == true and elapsed < minimum then return end
+    if elapsed > 120 or not validPoint(src, actionPoint(action)) or not hasTools(src, action) then
+        TriggerClientEvent('parsons:security:ActionResult', src, false, action)
+        return
+    end
+    if succeeded == true and elapsed < minimum then
+        TriggerClientEvent('parsons:security:ActionResult', src, false, action)
+        return
+    end
     if succeeded ~= true then
         if action == 'gate_hack' and validPoint(src, actionPoint(action)) then
             raiseAlarm('failed_gate_hack')
