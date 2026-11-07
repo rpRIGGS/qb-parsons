@@ -1,5 +1,8 @@
 # Parsons — in-server mapping and integration checklist
 
+> **2026-11-06 mapping update:** Use [the detailed activity walkthrough and developer reconciliation](PARSONS-ACTIVITY-WALKTHROUGH.md) for tomorrow's in-game survey. This older checklist contains historical unchecked items and stage snapshots that are now superseded: the 46-point polygon, both reception PEDs, guard PED, arrival/release, boss-menu vector, eight patient-room IDs, two observation-room IDs, basement partition and the front gate door ID have been supplied. The actual front gate ID `Parsons-Security ring` is now configured in `Config.Security.gate.doorIds`; hack/bypass interaction positions remain unmapped and disabled. Boss-menu interaction and patient-specific qb-doorlock enforcement are not yet wired. Do not re-collect completed mapping.
+
+
 **This is the consolidated list of inputs to collect when you are at the PowerMoves development server.** None of these placeholders blocks the Stage 7 code milestone. Keep the actual coordinates out of upstream qb-prison.
 
 ## 1. Single fenced-property PolyZone
