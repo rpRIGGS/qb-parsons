@@ -406,7 +406,7 @@ exports('AssignSecureRoom', function(targetId, roomId)
     Player.Functions.Save()
     if previousRoom ~= roomId then ClearRoomReservation(previousRoom, citizenid) end
     roomLocks[roomId] = nil
-    TriggerClientEvent('parsons:client:ReceptionComplete', Player.PlayerData.source, PublicState(hold))
+    TriggerClientEvent('parsons:client:RoomAssignmentChanged', Player.PlayerData.source, PublicState(hold))
     TriggerEvent('parsons:server:RoomAssigned', Player.PlayerData.source, citizenid, roomId)
     return true
 end)
