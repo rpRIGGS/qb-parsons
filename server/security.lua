@@ -184,6 +184,7 @@ RegisterNetEvent('parsons:security:FinishAction', function(action, token, succee
             raiseAlarm('failed_gate_hack')
             emit('failed_gate_hack', {coords = actionPoint(action)})
         end
+        TriggerClientEvent('parsons:security:ActionResult', src, false, action)
         return
     end
     local applied = act(src, action)
