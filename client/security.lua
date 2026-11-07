@@ -56,36 +56,14 @@ RegisterNetEvent('parsons:security:ActionResult', function(applied, action)
 end)
 CreateThread(function()
     Wait(1000)
-    if GetResourceState('qb-target') == 'started' then
-        for _, entry in ipairs(actions) do
-            local point = entry.config()
-            if point and point.x and point.y and point.z then
-                local key, label = entry.key, entry.label
-                exports['qb-target']:AddBoxZone('parsons_' .. key, vector3(point.x, point.y, point.z),
-                    1.5, 1.5, {name = 'parsons_' .. key, heading = point.w or 0, minZ = point.z - 1, maxZ = point.z + 1},
-                    {options = {{icon = 'fas fa-bolt', label = label, action = function() start(key) end}},
-                    distance = 2.5})
-            end
-        end
-    else
-        while true do
-            local ped = PlayerPedId()
-            local coords = GetEntityCoords(ped)
-            local nearest, distance
-            for _, entry in ipairs(actions) do
-                local point = entry.config()
-                if point and point.x and point.y and point.z then
-                    local dist = #(coords - vector3(point.x, point.y, point.z))
-                    if dist < 2.0 and (not distance or dist < distance) then nearest, distance = entry, dist end
-                end
-            end
-            if nearest and not busy then
-                exports['qb-core']:DrawText('[E] ' .. nearest.label, 'left')
-                if IsControlJustReleased(0, 38) then start(nearest.key) end
-            else
-                exports['qb-core']:HideText()
-            end
-            Wait(nearest and 0 or 750)
+    for _, entry in ipairs(actions) do
+        local point = entry.config()
+        if point and point.x and point.y and point.z then
+            local key, label = entry.key, entry.label
+            exports['qb-target']:AddBoxZone('parsons_' .. key, vector3(point.x, point.y, point.z),
+                1.5, 1.5, {name = 'parsons_' .. key, heading = point.w or 0, minZ = point.z - 1, maxZ = point.z + 1},
+                {options = {{icon = 'fas fa-bolt', label = label, action = function() start(key) end}},
+                distance = 2.5})
         end
     end
 end)
@@ -95,31 +73,6 @@ CreateThread(function()
     Wait(1500)
     local alarm = Config.Security and Config.Security.alarm
     if not alarm or type(alarm.resetPoints) ~= 'table' then return end
-    if GetResourceState('qb-target') ~= 'started' then
-        local showing = false
-        while true do
-            local nearIndex
-            local coords = GetEntityCoords(PlayerPedId())
-            for index, point in ipairs(alarm.resetPoints) do
-                if point and point.x and point.y and point.z
-                    and #(coords - vector3(point.x, point.y, point.z)) < 2.0 then
-                    nearIndex = index
-                    break
-                end
-            end
-            if nearIndex and not showing then
-                exports['qb-core']:DrawText('[E] Reset Parsons security alarm', 'left')
-                showing = true
-            elseif not nearIndex and showing then
-                exports['qb-core']:HideText()
-                showing = false
-            end
-            if nearIndex and IsControlJustReleased(0, 38) then
-                TriggerServerEvent('parsons:security:ResetAlarm', nearIndex)
-            end
-            Wait(nearIndex and 0 or 750)
-        end
-    end
     for index, point in ipairs(alarm.resetPoints) do
         if point and point.x and point.y and point.z then
             local station = index
