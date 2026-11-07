@@ -31,7 +31,9 @@ end
 local function NormalizeHold(value)
     if type(value) ~= 'table' or value.active ~= true then return nil end
     if type(value.startedAt) ~= 'number' then return nil end
-    if value.kind ~= 'medical' and value.kind ~= 'court' then return nil end
+    if value.kind ~= 'medical' and value.kind ~= 'court'
+        and value.kind ~= 'voluntary' and value.kind ~= 'outpatient' then return nil end
+    if value.kind == 'outpatient' and value.remainingSeconds ~= nil then return nil end
     if value.remainingSeconds ~= nil and (type(value.remainingSeconds) ~= 'number' or value.remainingSeconds < 0) then return nil end
     if value.kind == 'medical' and value.remainingSeconds == nil then return nil end
     return value
