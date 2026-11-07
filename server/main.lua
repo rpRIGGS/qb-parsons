@@ -523,6 +523,10 @@ RegisterNetEvent('parsons:server:ReceptionCheckIn', function()
     lastEligible[src] = false
     TriggerClientEvent('parsons:client:ReceptionComplete', src, PublicState(hold))
     TriggerEvent('parsons:server:RoomAssigned', src, Player.PlayerData.citizenid, roomId)
+    -- Operational event for authorized integrations; clinical records stay in SAMS.net.
+    TriggerEvent('parsons:server:PatientCheckedIn', src, Player.PlayerData.citizenid, {
+        kind = hold.kind, phase = hold.phase, roomId = roomId, checkedInAt = hold.checkedInAt
+    })
     TriggerClientEvent('QBCore:Notify', src, 'Reception check-in complete. Assigned room: ' .. roomId, 'success')
 end)
 
