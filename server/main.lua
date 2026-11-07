@@ -290,8 +290,52 @@ local function ReturnBelongings(Player)
     if type(Player.Functions.Save) ~= 'function' then
         return false, 'required inventory functions unavailable'
     end
-    -- Mark pending before restoration. A partial failure must never cause
-    -- the full snapshot to be issued again automatically.
+    -- Preserve only configured treatment-acquired items at discharge. Keep the
+    -- snapshot (including metadata) before removing all treatment inventory.
+    -- If an operation fails, require reconciliation; never replay automatically.
+    local exemptions = {}
+    for _, name in ipairs(Config.DischargeExcludedItems or {}) do
+        if type(name) == 'string' and name ~= '' then exemptions[name] = true end
+    end
+    local retained = {}
+    for slot, item in pairs(Player.PlayerData.items or {}) do
+        if item and exemptions[item.name] and (tonumber(item.amount) or 0) > 0 then
+            retained[#retained + 1] = {
+                name = item.name, amount = item.amount, info = item.info,
+                slot = item.slot or slot
+            }
+        end
+    end
+    table.sort(retained, function(x, y) return (tonumber(x.slot) or 0) < (tonumber(y.slot) or 0) end)
+    data.status = 'pending_return'
+    data.dischargeRetained = retained
+    data.dischargeStep = 'clear_treatment_inventory'
+    Player.Functions.SetMetaData(BELONGINGS_KEY, data)
+    Player.Functions.Save()
+    if type(Player.ClearInventory) ~= 'function' or Player.ClearInventory() == false then
+        return false, 'discharge inventory clearing failed; staff reconciliation required'
+    end
+    Player.Functions.Save()
+    for _, item in pairs(Player.PlayerData.items or {}) do
+        if item and (tonumber(item.amount) or 0) > 0 then
+            return false, 'discharge inventory not empty; staff reconciliation required'
+        end
+    end
+    for index, item in ipairs(retained) do
+        data.dischargeStep = 'restore_exempt'
+        data.dischargeRetainedIndex = index
+        Player.Functions.SetMetaData(BELONGINGS_KEY, data)
+        Player.Functions.Save()
+        local success = exports['qb-inventory']:AddItem(Player.PlayerData.source,
+            item.name, item.amount, false, item.info, 'qb-parsons:discharge-exempt')
+        Player.Functions.Save()
+        if not success then return false, 'exempt item restoration failed; staff reconciliation required' end
+    end
+    -- Mark pending before restoring admission belongings. Partial grants cannot
+    -- be replayed automatically after a crash or an inventory failure.
+    data.dischargeStep = 'restore_original'
+    Player.Functions.SetMetaData(BELONGINGS_KEY, data)
+    Player.Functions.Save()
     data.status = 'pending_return'
     Player.Functions.SetMetaData(BELONGINGS_KEY, data)
     Player.Functions.Save()
