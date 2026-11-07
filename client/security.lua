@@ -49,7 +49,7 @@ RegisterNetEvent('parsons:security:ActionResult', function(applied, action)
 end)
 CreateThread(function()
     Wait(1000)
-    if Config.UseTarget and GetResourceState('qb-target') == 'started' then
+    if GetResourceState('qb-target') == 'started' then
         for _, entry in ipairs(actions) do
             local point = entry.config()
             if point and point.x and point.y and point.z then
