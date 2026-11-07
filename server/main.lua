@@ -385,6 +385,11 @@ exports('AssignSecureRoom', function(targetId, roomId)
     if not hold or not hold.checkedIn then return false, 'patient not checked in' end
     if hold.roomReservationExpired then return false, 'patient must check in again' end
     if hold.transport and hold.transport.active then return false, 'patient away on transport' end
+    -- Secure housing transfers are a physical, supervised in-facility operation.
+    -- Never remotely reassign an escaped or otherwise absent patient.
+    if hold.absentSince or not InsideFacility(Player.PlayerData.source) then
+        return false, 'patient must be present inside Parsons'
+    end
     local room = RoomById(roomId)
     if not room or room.housing ~= 'secure' then return false, 'not a configured secure bedroom' end
     local citizenid = Player.PlayerData.citizenid
