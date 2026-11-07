@@ -998,6 +998,7 @@ AddEventHandler('playerDropped', function()
             hold.absentSince = os.time()
             hold.lastDepartedAt = hold.absentSince
             hold.absenceReason = 'disconnect'
+            hold.reentryInventoryPending = true
             MarkRoomAbsence(hold.roomId, Player.PlayerData.citizenid, hold.absentSince)
             SetHold(Player, hold)
             Player.Functions.Save()
