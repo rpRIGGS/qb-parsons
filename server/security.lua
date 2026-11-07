@@ -127,6 +127,7 @@ local function act(src, action)
         local point = action == 'electrical_inside' and cfg.electrical.inside or cfg.electrical.outside
         if not validPoint(src, point) or now < powerUntil then return false end
         powerUntil = now + math.max(30, tonumber(cfg.electrical.durationSeconds) or 180)
+        TriggerEvent('parsons:security:PowerInterrupted', powerUntil)
         if now - lastMonitoringAlert >= math.max(0, tonumber(cfg.monitoring and cfg.monitoring.incidentCooldownSeconds) or 120) then
             lastMonitoringAlert = now
             emit('security_communications_failure', {powerUntil = powerUntil, coords = {x = point.x, y = point.y, z = point.z}})
