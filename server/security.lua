@@ -99,6 +99,9 @@ local function raiseAlarm(reason)
         alarmUntil = os.time() + duration
         TriggerClientEvent('parsons:security:AlarmState', -1, true, reason)
         TriggerEvent('parsons:security:AlarmChanged', true, reason)
+    else
+        -- A fresh verified incident keeps an existing alarm active for its full duration.
+        alarmUntil = math.max(alarmUntil, os.time() + duration)
     end
 end
 -- Physical qb-doorlock changes are intentionally deferred to the dedicated fork.
