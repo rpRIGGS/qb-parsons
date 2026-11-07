@@ -41,3 +41,14 @@ Scope: qb-parsons operational implementation, with future SAMS.net and SADOJ.net
 - Existing AssignRoom defaults to standard rooms and secure transfers require trusted server caller; full classification/approval workflow is not complete.
 - Existing activity engine does not yet constitute a permanent SAMS medical record.
 - No original complete qb-doorlock config or in-server verification is present; door enforcement remains outstanding.
+
+## Task 1 implementation update (2026-11-07)
+- Trusted `AdmitPatient` accepts `voluntary` with `residential_7` (7 days) or `residential_28` (28 days). These are staff-authorized programs, not 5150/involuntary holds. `medical` durations remain separately constrained.
+- `outpatient` (`evaluation` or `treatment`) is an operational enrollment without residential room, custody intake or residential countdown. Reception check-in refuses outpatient enrollment. Scheduling/clinical notes remain external.
+- `ClassifyPendingAdmission` selects standard versus secure housing independently of hold authority. Authorized secure/residential room transfers update classification, not the court order.
+- Every residential admission stores the incoming item snapshot and clears the inventory. Return from escape clears newly acquired inventory without overwriting the original snapshot. Discharge clears treatment-acquired inventory, retains only configured `Config.DischargeExcludedItems` by item name, then restores original admission items. The notebook/commissary/vending scripts are out of scope.
+- `Config.DischargeExcludedItems` defaults to empty. The user may add exact item names from shared items.lua. The original inventory item's ordinary QB metadata is preserved by inventory APIs; Parsons does not interpret notebook content.
+- On any interrupted inventory transition, the system blocks automatic replay and requires explicit staff reconciliation to prevent duplicated grants. `GetBelongingsRecord` and `ConfirmBelongingsReconciled` remain trusted-server-only.
+- $20 vending cash allowance, pay phones, physical cash migration and QB Shops commissary are *ideas/independent configuration*, not implemented in qb-parsons.
+- Door policy export `CanAccessRoomDoor` is implemented but is **not** actual qb-doorlock enforcement. Await verified original doorlock config and server API; do not fabricate integration or claim the doors are secured.
+- Live in-game behavior remains unverified. No special qb-inventory compatibility concern exists: the user's custom UI uses standard QBCore qb-inventory APIs.
