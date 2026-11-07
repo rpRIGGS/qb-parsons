@@ -113,7 +113,7 @@ local function validPoint(src, point)
     if not point or type(point.x) ~= 'number' or type(point.y) ~= 'number' or type(point.z) ~= 'number' then return false end
     if type(src) ~= 'number' or src < 1 then return false end
     local ped = GetPlayerPed(src)
-    return ped ~= 0 and #(GetEntityCoords(ped) - vector3(point.x, point.y, point.z)) <= 3.0
+    return ped ~= nil and ped ~= 0 and #(GetEntityCoords(ped) - vector3(point.x, point.y, point.z)) <= 3.0
 end
 local function act(src, action)
     local cfg = Config.Security
