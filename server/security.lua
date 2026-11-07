@@ -95,9 +95,6 @@ end
 -- Never spoof an online player's identity or use unlockAnyway to force door state.
 -- Stage 7 records a compromised gate and raises an alarm; actual gate motion
 -- must be implemented by the future trusted qb-doorlock adapter.
-local function syncGate(_locked)
-    return false
-end
 local function state()
     local now = os.time()
     return {powerFailure = now < powerUntil, gateCompromised = now < gateUntil, alarmActive = now < alarmUntil, alarmReason = now < alarmUntil and alarmReason or nil}
