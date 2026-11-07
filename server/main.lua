@@ -374,6 +374,43 @@ local function AssignRoom(Player, hold)
     return nil
 end
 
+-- Authorized staff integration: explicitly classify a checked-in patient into a secure
+-- basement bedroom. Court holds are NOT automatically assigned secure housing.
+-- This server-only export does not create holds or grant door access.
+exports('AssignSecureRoom', function(targetId, roomId)
+    if not IsTrustedCaller() then return false, 'untrusted resource' end
+    local Player = GetPlayer(targetId)
+    if not Player then return false, 'patient offline' end
+    local hold = TickHold(Player)
+    if not hold or not hold.checkedIn then return false, 'patient not checked in' end
+    if hold.roomReservationExpired then return false, 'patient must check in again' end
+    if hold.transport and hold.transport.active then return false, 'patient away on transport' end
+    local room = RoomById(roomId)
+    if not room or room.housing ~= 'secure' then return false, 'not a configured secure bedroom' end
+    local citizenid = Player.PlayerData.citizenid
+    if roomLocks[roomId] then return false, 'room assignment in progress' end
+    local owner = RoomOwner(roomId)
+    if (owner and owner ~= citizenid) or FindRoomOccupant(roomId, citizenid) then
+        return false, 'secure room occupied'
+    end
+    if hold.roomId == roomId and owner == citizenid then return true end
+    roomLocks[roomId] = true
+    -- Reserve the destination before releasing the previous room.
+    SetResourceKvp(RoomKey(roomId), citizenid)
+    SetResourceKvpInt(AbsenceKey(roomId), 0)
+    local previousRoom = hold.roomId
+    hold.roomId = roomId
+    hold.roomReservationExpired = false
+    hold.secureHousingAssignedAt = os.time()
+    SetHold(Player, hold)
+    Player.Functions.Save()
+    if previousRoom ~= roomId then ClearRoomReservation(previousRoom, citizenid) end
+    roomLocks[roomId] = nil
+    TriggerClientEvent('parsons:client:ReceptionComplete', Player.PlayerData.source, PublicState(hold))
+    TriggerEvent('parsons:server:RoomAssigned', Player.PlayerData.source, citizenid, roomId)
+    return true
+end)
+
 -- Door-access policy for a future qb-doorlock adapter. No client can grant access.
 -- Rooms are not wired to qb-doorlock until real MLO door IDs are configured.
 local function RoomForDoor(doorId)
