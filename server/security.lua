@@ -48,7 +48,6 @@ local function emit(kind, details)
                     end
                     if authorized then
                         TriggerClientEvent('parsons:security:SendDispatch', id, payload)
-                        break
                     end
                 end
             end
