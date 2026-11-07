@@ -95,7 +95,31 @@ CreateThread(function()
     Wait(1500)
     local alarm = Config.Security and Config.Security.alarm
     if not alarm or type(alarm.resetPoints) ~= 'table' then return end
-    if GetResourceState('qb-target') ~= 'started' then return end
+    if GetResourceState('qb-target') ~= 'started' then
+        local showing = false
+        while true do
+            local nearIndex
+            local coords = GetEntityCoords(PlayerPedId())
+            for index, point in ipairs(alarm.resetPoints) do
+                if point and point.x and point.y and point.z
+                    and #(coords - vector3(point.x, point.y, point.z)) < 2.0 then
+                    nearIndex = index
+                    break
+                end
+            end
+            if nearIndex and not showing then
+                exports['qb-core']:DrawText('[E] Reset Parsons security alarm', 'left')
+                showing = true
+            elseif not nearIndex and showing then
+                exports['qb-core']:HideText()
+                showing = false
+            end
+            if nearIndex and IsControlJustReleased(0, 38) then
+                TriggerServerEvent('parsons:security:ResetAlarm', nearIndex)
+            end
+            Wait(nearIndex and 0 or 750)
+        end
+    end
     for index, point in ipairs(alarm.resetPoints) do
         if point and point.x and point.y and point.z then
             local station = index
