@@ -817,6 +817,14 @@ exports('DischargePatient', function(targetId, authority)
     if hold.kind == 'outpatient' and authority ~= 'medical' and authority ~= 'voluntary' then
         return false, 'outpatient closure requires staff or patient consent'
     end
+    if hold.kind ~= 'outpatient' then
+        local custody = GetBelongings(Player)
+        if not hold.checkedIn then return false, 'residential patient has not checked in' end
+        if not custody then return false, 'missing residential belongings custody record' end
+        if custody.status ~= 'stored' then
+            return false, 'belongings custody requires reconciliation before discharge'
+        end
+    end
     local dischargeSnapshot = {
         kind = hold.kind, phase = hold.phase, roomId = hold.roomId,
         housingClassification = hold.housingClassification or 'standard',
