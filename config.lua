@@ -147,3 +147,6 @@ Config.Locations = {
         therapy = {}, recreation = {}, rehabilitation = {}
     }
 }
+
+-- Parsons medical management / boss menu interaction point
+Config.BossMenu = vector4(-1493.83, 860.13, 180.6, 115.0)
