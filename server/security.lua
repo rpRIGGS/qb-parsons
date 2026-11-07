@@ -160,7 +160,10 @@ local function hasTools(src, action)
 end
 RegisterNetEvent('parsons:security:BeginAction', function(action)
     local src = source
-    if type(action) ~= 'string' or not validPoint(src, actionPoint(action)) or not hasTools(src, action) then return end
+    if type(action) ~= 'string' or not validPoint(src, actionPoint(action)) or not hasTools(src, action) then
+        TriggerClientEvent('parsons:security:BeginDenied', src, 'Security station unavailable or required tool missing.')
+        return
+    end
     local now = os.time()
     if attempts[src] and now - attempts[src].started < 120 then return end
     if (action == 'gate_hack' and now < gateUntil)
