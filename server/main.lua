@@ -517,6 +517,7 @@ exports('AssignSecureRoom', function(targetId, roomId)
     local hold = TickHold(Player)
     if not hold or not hold.checkedIn then return false, 'patient not checked in' end
     if hold.roomReservationExpired then return false, 'patient must check in again' end
+    if hold.reentryInventoryPending then return false, 'reentry belongings clearance required' end
     if hold.transport and hold.transport.active then return false, 'patient away on transport' end
     -- Secure housing transfers are a physical, supervised in-facility operation.
     -- Never remotely reassign an escaped or otherwise absent patient.
@@ -562,6 +563,7 @@ exports('AssignResidentialRoom', function(targetId, roomId)
     local hold = TickHold(Player)
     if not hold or not hold.checkedIn then return false, 'patient not checked in' end
     if hold.roomReservationExpired then return false, 'patient must check in again' end
+    if hold.reentryInventoryPending then return false, 'reentry belongings clearance required' end
     if hold.transport and hold.transport.active then return false, 'patient away on transport' end
     if hold.absentSince or not InsideFacility(Player.PlayerData.source) then
         return false, 'patient must be present inside Parsons'
