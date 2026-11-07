@@ -10,7 +10,12 @@ local function start(key)
     if busy or requesting then return end
     requesting = true
     TriggerServerEvent('parsons:security:BeginAction', key)
-    SetTimeout(3000, function() requesting = false end)
+    SetTimeout(3000, function()
+        if requesting then
+            requesting = false
+            lib.notify({title = 'Parsons security', description = 'Security action unavailable at this location or required tool missing.', type = 'error'})
+        end
+    end)
 end
 RegisterNetEvent('parsons:security:StartAction', function(key, token)
     if busy then return end
