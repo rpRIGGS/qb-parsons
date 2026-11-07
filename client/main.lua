@@ -65,17 +65,18 @@ RegisterNetEvent('parsons:client:Discharge', function()
     -- A server-issued event is not by itself a substitute for authorization;
     -- the server must validate discharge before emitting it.
     if not admitted then return end
-    if not Config.Release then
+    local wasOutpatient = hold and hold.careSetting == 'outpatient'
+    if not wasOutpatient and not Config.Release then
         QBCore.Functions.Notify('Discharged. Exit location is not mapped; contact staff.', 'primary')
     end
     refreshSerial = refreshSerial + 1
     admitted = false
     hold = nil
     TriggerEvent('parsons:client:AdmissionState', false)
-    if Config.PatientUniformsEnabled then
+    if not wasOutpatient and Config.PatientUniformsEnabled then
         TriggerEvent('qb-clothing:client:loadPlayerSkin')
     end
-    if Config.Release then TransferTo(Config.Release) end
+    if not wasOutpatient and Config.Release then TransferTo(Config.Release) end
     QBCore.Functions.Notify(Lang:t('success.discharged'), 'success')
 end)
 
