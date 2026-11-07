@@ -230,7 +230,10 @@ RegisterNetEvent('parsons:security:ResetAlarm', function(index)
     end
     local player = QBCore.Functions.GetPlayer(src)
     local job = player and player.PlayerData and player.PlayerData.job
-    if not job or not job.onduty then return end
+    if not job or not job.onduty then
+        TriggerClientEvent('parsons:security:AlarmResetResult', src, false, 'You must be on duty to reset this alarm.')
+        return
+    end
     local allowed = false
     for _, kind in ipairs(cfg.resetJobTypes or {}) do
         if job.type == kind then allowed = true; break end
