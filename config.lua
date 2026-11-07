@@ -119,8 +119,22 @@ Config.Security = {
         security_communications_failure = '10-90', gate_security_compromised = '10-90', failed_gate_hack = '10-90',
         unauthorized_aircraft = '10-66', patient_departure = '10-80', patient_return = '10-80', guard_assault = '10-90', guard_down = '10-90'
     }},
-    electrical = {item = 'electronickit', inside = nil, outside = nil, durationSeconds = 300},
-    gate = {item = 'gatecrack', hack = nil, bypass = nil, doorIds = {'Parsons-Security ring'}, compromisedSeconds = 300},
+    -- Capture these three locations in game later. The interactions, validation,
+    -- minigames, incident flow and state recovery are already implemented.
+    -- Set each point to vector4(x, y, z, heading) when mapped; nil disables only that station.
+    electrical = {
+        item = 'electronickit',
+        inside = nil,  -- TODO MLO: interior electrical service panel
+        outside = nil, -- TODO MLO: exterior electrical service panel
+        durationSeconds = 300
+    },
+    gate = {
+        item = 'gatecrack',
+        hack = nil, -- TODO MLO: gate electronic access panel
+        bypass = nil, -- reserved for future doorlock adapter; not a required Stage 7 coordinate
+        doorIds = {'Parsons-Security ring'},
+        compromisedSeconds = 300
+    },
     -- PS Dispatch is the optional configured police alert adapter; no legacy fallback.
 }
 
