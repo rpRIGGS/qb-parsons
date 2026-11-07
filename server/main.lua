@@ -132,7 +132,7 @@ local function TickHold(Player)
     hold = UpdateAbsence(Player, hold, inside)
     lastInside[src] = inside
     local eligible = hold ~= nil and hold.checkedIn == true and inside
-        and not hold.roomReservationExpired and not (hold.transport and hold.transport.active)
+        and not hold.reentryInventoryPending and not hold.roomReservationExpired and not (hold.transport and hold.transport.active)
     lastTick[src] = now
     lastEligible[src] = eligible
     if not hold or hold.remainingSeconds == nil or not previous or not eligible or not previouslyEligible then return hold end
@@ -158,6 +158,7 @@ local function PublicState(hold)
         checkedIn = hold.checkedIn == true,
         roomReservationExpired = hold.roomReservationExpired == true,
         absent = hold.absentSince ~= nil,
+        reentryInventoryPending = hold.reentryInventoryPending == true,
         transportActive = hold.transport ~= nil and hold.transport.active == true,
         roomId = hold.roomId,
         housingClassification = hold.housingClassification,
@@ -636,8 +637,8 @@ exports('AuthorizeDoorInteraction', function(src, doorId)
     local roomId = RoomForDoor(doorId)
     if not roomId then return false end -- secure gate / observation: staff only
     local hold = GetHold(Player)
-    return hold ~= nil and hold.checkedIn == true and not hold.roomReservationExpired
-        and hold.absentSince == nil and InsideFacility(tonumber(src))
+    return hold ~= nil and hold.checkedIn == true and not hold.reentryInventoryPending
+        and not hold.roomReservationExpired and hold.absentSince == nil and InsideFacility(tonumber(src))
         and not (hold.transport and hold.transport.active) and hold.roomId == roomId
         and RoomOwner(roomId) == Player.PlayerData.citizenid
 end)
@@ -654,8 +655,8 @@ local function CanAccessRoomDoor(src, doorId)
         end
     end
     local hold = GetHold(Player)
-    return hold ~= nil and hold.checkedIn == true and not hold.roomReservationExpired
-        and hold.absentSince == nil and InsideFacility(src)
+    return hold ~= nil and hold.checkedIn == true and not hold.reentryInventoryPending
+        and not hold.roomReservationExpired and hold.absentSince == nil and InsideFacility(src)
         and not (hold.transport and hold.transport.active) and hold.roomId == roomId
         and RoomOwner(roomId) == Player.PlayerData.citizenid
 end
