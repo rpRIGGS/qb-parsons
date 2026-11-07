@@ -47,7 +47,9 @@ local function emit(kind, details)
                         if job.name == allowed or job.type == allowed then authorized = true break end
                     end
                     if authorized then
+                        -- CustomAlert creates a shared dispatch call; emit once to avoid duplicates.
                         TriggerClientEvent('parsons:security:SendDispatch', id, payload)
+                        break
                     end
                 end
             end
