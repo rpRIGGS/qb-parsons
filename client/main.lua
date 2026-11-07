@@ -145,6 +145,9 @@ local function SetupGuard()
     SetPedAlertness(guardPed, 2)
     exports['qb-target']:AddTargetEntity(guardPed, {
         options = {
+            {icon = 'fas fa-clipboard', label = 'Check commitment status',
+                action = RequestDischargeStatus,
+                canInteract = function() return admitted end},
             {icon = 'fas fa-car', label = 'Check out patient for court transport',
                 action = function() TransportPrompt(false) end},
             {icon = 'fas fa-clipboard-check', label = 'Return patient from court transport',
