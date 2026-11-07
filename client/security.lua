@@ -17,6 +17,10 @@ local function start(key)
         end
     end)
 end
+RegisterNetEvent('parsons:security:BeginDenied', function(message)
+    requesting = false
+    lib.notify({title = 'Parsons security', description = message or 'Security action denied.', type = 'error'})
+end)
 RegisterNetEvent('parsons:security:StartAction', function(key, token)
     if busy then return end
     requesting = false
