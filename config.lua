@@ -90,7 +90,7 @@ Config.FacilityZone = { -- Parsons PolyZone export, 2026-11-06; adjust vertical 
         vector2(-1487.1324462891, 902.77062988281),
         vector2(-1482.3350830078, 895.85711669922),
     },
-    minZ = 181.31428527832,
+    minZ = 176.0, -- Provisional: basement doors are at ~177.15; verify with devPoly
     maxZ = 189.31729125977
 }
 -- Stage 7: one fenced-property polygon for patient eligibility and low-aircraft detection.
