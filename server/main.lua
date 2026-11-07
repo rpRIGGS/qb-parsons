@@ -291,6 +291,41 @@ local function StoreBelongings(Player)
     return true
 end
 
+-- On return from escape or expired reservation, remove contraband acquired
+-- outside the facility without replacing or overwriting the original intake snapshot.
+local function ClearReentryInventory(Player)
+    local belongings = GetBelongings(Player)
+    if not belongings or belongings.status ~= 'stored' then
+        return false, 'original belongings custody requires staff reconciliation'
+    end
+    if type(Player.ClearInventory) ~= 'function' then return false, 'inventory clearing unavailable' end
+    local current = Player.PlayerData.items or {}
+    local hasItems = false
+    for _, item in pairs(current) do
+        if item and (tonumber(item.amount) or 0) > 0 then hasItems = true break end
+    end
+    if not hasItems then return true end
+    -- Crash-safe: an interrupted clearance must be inspected, never blindly
+    -- repeated against a changed inventory or mistaken for a new admission.
+    belongings.status = 'storing'
+    belongings.reentryClearStartedAt = os.time()
+    Player.Functions.SetMetaData(BELONGINGS_KEY, belongings)
+    Player.Functions.Save()
+    local cleared = Player.ClearInventory()
+    Player.Functions.Save()
+    if cleared == false then return false, 'reentry inventory clear failed; staff reconciliation required' end
+    for _, item in pairs(Player.PlayerData.items or {}) do
+        if item and (tonumber(item.amount) or 0) > 0 then
+            return false, 'reentry inventory not empty; staff reconciliation required'
+        end
+    end
+    belongings.status = 'stored'
+    belongings.reentryClearStartedAt = nil
+    Player.Functions.SetMetaData(BELONGINGS_KEY, belongings)
+    Player.Functions.Save()
+    return true
+end
+
 local function ReturnBelongings(Player)
     local data = GetBelongings(Player)
     if not data then return true end
@@ -600,8 +635,27 @@ RegisterNetEvent('parsons:server:ReceptionCheckIn', function()
     end
     if not nearby then return end
     local hold = GetHold(Player)
-    if not hold or hold.kind == 'outpatient' or (hold.checkedIn and not hold.roomReservationExpired) then return end
+    if not hold or hold.kind == 'outpatient' then return end
+    if hold.checkedIn and not hold.roomReservationExpired then
+        if hold.absentSince then
+            local cleared, clearError = ClearReentryInventory(Player)
+            if not cleared then
+                TriggerClientEvent('QBCore:Notify', src, clearError, 'error')
+                return
+            end
+            hold.absentSince = nil
+            hold.absenceReason = nil
+            SetHold(Player, hold)
+            Player.Functions.Save()
+        end
+        return
+    end
     if hold.checkedIn and hold.roomReservationExpired then
+        local cleared, clearError = ClearReentryInventory(Player)
+        if not cleared then
+            TriggerClientEvent('QBCore:Notify', src, clearError, 'error')
+            return
+        end
         local roomId = AssignRoom(Player, hold)
         if not roomId then
             TriggerClientEvent('QBCore:Notify', src, 'No available room for reassignment.', 'error')
