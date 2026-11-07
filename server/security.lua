@@ -157,6 +157,7 @@ local function hasTools(src, action)
     local player = QBCore.Functions.GetPlayer(src)
     if not player then return false end
     local cfg = Config.Security
+    if action ~= 'gate_hack' and action ~= 'electrical_inside' and action ~= 'electrical_outside' then return false end
     local item = action == 'gate_hack' and cfg.gate.item or cfg.electrical.item
     if type(item) ~= 'string' or item == '' then return false end
     local found = player.Functions.GetItemByName(item)
