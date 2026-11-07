@@ -1,80 +1,75 @@
-# qb-doorlock server authorization adapter (Task 1)
+# Deferred qb-doorlock fork integration — Parsons
 
-This integration targets the verified upstream `qbcore-fivem/qb-doorlock/server.lua` implementation. Parsons cannot enforce doorlock state by itself. **Install this patch in the running qb-doorlock resource**, or merge it into its fork. The Parsons export is already committed.
+**Status:** Reference snippet only. Do not install yet. Keep this work in the future qb-doorlock fork/integration stage alongside qb-ambulancejob. No qb-doorlock repository is modified by this file.
 
-## 1. Add the following at the beginning of `isAuthorized(Player, door, usedLockpick)`, before `door.allAuthorized`, admin access, lockpick access, or any job checks:
+## Why this is needed
+
+The current stock `qbcore-fivem/qb-doorlock/server.lua` handles `qb-doorlock:server:updateState` with an `unlockAnyway` bypass and a caller-supplied `sentSource`. Simply adding a check inside `isAuthorized` would not protect every state change. The enforcement hook must run in the **server updateState handler before** its existing `if not unlockAnyway and not isAuthorized(...)` statement.
+
+Parsons already exports `AuthorizeDoorInteraction(src, doorID)`: `nil` means unmanaged, `true` allows, `false` denies. It covers configured bedrooms, observation doors, and secure-wing gate. Its staff and patient policies remain inside Parsons.
+
+## Minimal hook for future fork
+
+**A.** In the future qb-doorlock fork's `server.lua`, define a **static fail-closed set** of actual Parsons door IDs (copy from the verified running config; the examples below are placeholders and MUST be replaced):
 
 ```lua
-    -- Parsons-managed doors must never fall through to generic doorlock grants.
-    if GetResourceState('qb-parsons') == 'started' then
-        local ok, decision = pcall(function()
-            return exports['qb-parsons']:AuthorizeDoorInteraction(Player.PlayerData.source, door.id)
+-- Example structure ONLY; populate from actual Config.DoorList identifiers.
+local ParsonsManagedDoorIds = {
+    -- ['Parsons-Main Floor med ward 4'] = true,
+    -- ['Parsons-Basement 11'] = true,
+}
+```
+
+**B.** In the `qb-doorlock:server:updateState` handler, immediately **after** validating that `Config.DoorList[doorID]` exists, insert this block **before** the original authorization check:
+
+```lua
+    if ParsonsManagedDoorIds[doorID] then
+        -- Client-supplied sentSource and unlockAnyway are never authority.
+        -- Restrict this event to the actual invoking player for managed doors.
+        local actualSource = source
+        if type(actualSource) ~= 'number' or actualSource <= 0 then return end
+        if GetResourceState('qb-parsons') ~= 'started' then return end
+
+        local ok, allowed = pcall(function()
+            return exports['qb-parsons']:AuthorizeDoorInteraction(actualSource, doorID)
         end)
-        if not ok then return false end
-        if decision ~= nil then return decision == true end
-    end
-```
+        if not ok or allowed ~= true then return end
 
-**Important:** Upstream `isAuthorized` receives a door object, not the doorID, and stock configs may not set `door.id`. The correct production implementation passes the actual doorID into the authorization function (see next step); do not use the snippet above without that adjustment.
-
-## 2. Use this verified replacement signature and call:
-
-```lua
-local function isAuthorized(Player, door, usedLockpick, doorID)
-    -- Reject any Parsons-managed door before admin/lockpick/job bypasses.
-    if GetResourceState('qb-parsons') == 'started' then
-        local ok, decision = pcall(function()
-            return exports['qb-parsons']:AuthorizeDoorInteraction(Player.PlayerData.source, doorID)
-        end)
-        if not ok then return false end
-        if decision ~= nil then return decision == true end
-    end
-    -- Original qb-doorlock isAuthorized body follows unchanged.
-end
-```
-
-Change the existing updateState authorization call from:
-```lua
-isAuthorized(Player, Config.DoorList[doorID], usedLockpick)
-```
-to:
-```lua
-isAuthorized(Player, Config.DoorList[doorID], usedLockpick, doorID)
-```
-
-For safety, the resource must fail closed for known Parsons doors when qb-parsons is stopped. Set up a static `ParsonsDoorIds` table in qb-doorlock using the exact configured door IDs, and deny them when Parsons is unavailable. Otherwise qb-doorlock could fall through to normal authorization during a Parsons restart. This table must be reconciled with the **actual** installed qb-doorlock door IDs.
-
-## 3. Prevent event bypasses
-
-The upstream `qb-doorlock:server:updateState` handler accepts `unlockAnyway` and `sentSource` parameters. Do not permit either to bypass Parsons authorization. Immediately after verifying `Config.DoorList[doorID]`, before the `if not unlockAnyway and not isAuthorized(...)` guard, add:
-
-```lua
-    local parsonsDecision
-    if GetResourceState('qb-parsons') == 'started' then
-        local ok, decision = pcall(function()
-            return exports['qb-parsons']:AuthorizeDoorInteraction(source, doorID)
-        end)
-        if not ok then return end
-        parsonsDecision = decision
-    end
-    if parsonsDecision ~= nil then
-        if source == 0 or parsonsDecision ~= true then return end
-        -- Do not trust sentSource or unlockAnyway on managed doors.
-        playerId = source
-        Player = exports['qb-core']:GetPlayer(playerId)
+        -- Force the identity and suppress ordinary bypass flags.
+        playerId = actualSource
+        Player = exports['qb-core']:GetPlayer(actualSource)
         if not Player then return end
         unlockAnyway = false
         usedLockpick = false
+
+        -- Parsons policy already authorized this specific state change.
+        -- Skip the generic isAuthorized test ONLY for this managed door.
     end
 ```
 
-**Caution:** Because `sentSource` can affect player identity before this guard, full production integration should resolve the actual source and protect any other privileged update paths. Do not deploy without reviewing other qb-doorlock call sites and doorlock restart behavior.
+**C.** Replace the stock check:
 
-## Scope and readiness
+```lua
+    if not unlockAnyway and not isAuthorized(Player, Config.DoorList[doorID], usedLockpick) then
+```
 
-- `Config.PatientRooms` door IDs: upstairs four, secure basement four.
-- `Config.ObservationRooms` and `Config.SecureWardGateDoorIds`: staff only.
-- On-duty configured medical staff can access managed doors; patient access only to their own currently reserved bedroom.
-- Escaped/transported patients cannot unlock assigned rooms.
-- No new map coordinates or door identifiers are invented.
-- **Not yet installed in qb-doorlock; this is a reviewed integration guide, not a claim of live enforcement.**
+with:
+
+```lua
+    if not unlockAnyway
+        and not ParsonsManagedDoorIds[doorID]
+        and not isAuthorized(Player, Config.DoorList[doorID], usedLockpick) then
+```
+
+Keep the existing warning and `return` body unchanged. This makes the Parsons decision authoritative for managed doors, while leaving ordinary qb-doorlock behavior unchanged for other doors. When Parsons is stopped or throws an error, its doors cannot be changed via this event.
+
+## Integration checklist for later stage
+
+- Confirm **real** `Config.DoorList` IDs and map them to `Config.PatientRooms[].doorIds`, observation door IDs and `Config.SecureWardGateDoorIds` in Parsons. The two sets must match exactly; do not invent identifiers.
+- Review all other server-side door-state mutation paths in the actual fork, including admin/resource calls and door creation. The snippet above protects the stock updateState event only.
+- Decide whether staff emergency override and secure patient escort require distinct server-authorized workflows; do not grant generic bypasses.
+- Test assigned vs unassigned patients, on-duty staff, escaped/transported patients, secure gate, observation rooms, lockpicks, malicious `sentSource` and `unlockAnyway`, and Parsons restart/unavailability.
+- Review how clients present interactions: server-side denial is essential, but client UI may still show a door as interactable.
+- Validate that the existing Parsons export handles all intended IDs and no nil/mismatch grants a fallback.
+
+**Do not mark physical door access as implemented until the future fork is patched, deployed, and tested.** This reference is intentionally isolated so current Parsons Task 1 can close without starting the separate qb-doorlock expansion.
