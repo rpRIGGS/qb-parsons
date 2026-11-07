@@ -36,7 +36,7 @@ Config.ObservationRooms = {
     {id = 'observation-secure', doorIds = {'Parsons-Basement 6'}}
 }
 Config.SecureWardGateDoorIds = {'Parsons-Basement 11'} -- verify partition in game
-Config.PatientRoomStaffJobTypes = {'ems'} -- Authorized on-duty medical staff; do not grant blanket LEO access
+Config.PatientRoomStaffJobTypes = {'ems', 'parsonsmed'} -- On-duty medical staff by job type or name; no blanket LEO access
 Config.Reception = { coords = vector4(-1501.46, 849.16, 181.6, 249.1), additionalCoords = {vector4(-1514.51, 848.23, 181.6, 114.2)}, ped = 's_m_m_doctor_01' } -- Initial check-in and return to treatment
 Config.GuardShack = { coords = vector4(-1486.85, 881.13, 183.35, 341.37), ped = 's_m_m_security_01' } -- Status and authorized checkout
 Config.Arrival = vector4(-1523.8, 854.92, 181.59, 36.46) -- Inside Parsons gate
