@@ -450,7 +450,9 @@ exports('ClassifyPendingAdmission', function(targetId, classification)
     local Player = GetPlayer(targetId)
     if not Player then return false, 'patient offline' end
     local hold = GetHold(Player)
-    if not hold or hold.checkedIn then return false, 'requires pending admission' end
+    if not hold or hold.checkedIn or hold.kind == 'outpatient' then
+        return false, 'requires pending residential admission'
+    end
     hold.housingClassification = classification
     SetHold(Player, hold)
     Player.Functions.Save()
