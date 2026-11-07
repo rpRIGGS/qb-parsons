@@ -106,6 +106,11 @@ AddEventHandler('onResourceStart', function(resource)
     TriggerServerEvent('parsons:security:RequestState')
 end)
 
+RegisterNetEvent('parsons:security:AlarmResetResult', function(success, message)
+    if success then return end
+    lib.notify({title = 'Parsons security', description = message or 'Alarm reset denied.', type = 'error'})
+end)
+
 RegisterNetEvent('parsons:security:AlarmState', function(active, reason)
     if active then
         lib.notify({title = 'Parsons security', description = 'Security alarm activated.', type = 'error'})
