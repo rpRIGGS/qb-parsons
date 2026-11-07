@@ -91,27 +91,12 @@ local function raiseAlarm(reason)
         TriggerEvent('parsons:security:AlarmChanged', true, reason)
     end
 end
-local gateActor = nil
-local gateNeedsRelock = false
-local lastMonitoringAlert = 0
-local function syncGate(locked)
-    local gate = Config.Security and Config.Security.gate
-    if not gate or type(gate.doorIds) ~= 'table' or #gate.doorIds == 0 then return false end
-    if GetResourceState('qb-doorlock') ~= 'started' then return false end
-    local actor = gateActor
-    if not actor or not QBCore.Functions.GetPlayer(actor) then
-        local online = QBCore.Functions.GetPlayers()
-        actor = online[1]
-    end
-    if not actor then return false end
-    -- qbcore-fivem/qb-doorlock server updateState accepts sentSource as its eighth argument.
-    -- Never run this for an electrical outage; only a verified gate action/expiry.
-    for _, id in ipairs(gate.doorIds) do
-        if type(id) == 'string' or type(id) == 'number' then
-            TriggerEvent('qb-doorlock:server:updateState', id, locked, false, false, true, false, false, actor)
-        end
-    end
-    return true
+-- Physical qb-doorlock changes are intentionally deferred to the dedicated fork.
+-- Never spoof an online player's identity or use unlockAnyway to force door state.
+-- Stage 7 records a compromised gate and raises an alarm; actual gate motion
+-- must be implemented by the future trusted qb-doorlock adapter.
+local function syncGate(_locked)
+    return false
 end
 local function state()
     local now = os.time()
@@ -138,8 +123,7 @@ local function act(src, action)
     elseif action == 'gate_hack' then
         if not validPoint(src, cfg.gate.hack) or now < gateUntil then return false end
         gateUntil = now + math.max(30, tonumber(cfg.gate.compromisedSeconds) or 120)
-        gateActor = src
-        gateNeedsRelock = syncGate(false)
+        -- Physical gate unlock is deferred; security incident remains operational.
         raiseAlarm('gate_security_compromised')
         emit('gate_security_compromised', {gateUntil = gateUntil})
     else
@@ -243,12 +227,7 @@ CreateThread(function()
         end
         if wasPower and not current.powerFailure then emit('security_communications_restored') end
         if wasGate and not current.gateCompromised then
-            if gateNeedsRelock then gateNeedsRelock = not syncGate(true) end
-            if not gateNeedsRelock then gateActor = nil end
             emit('gate_security_restored')
-        end
-        if gateNeedsRelock and not current.gateCompromised then
-            if syncGate(true) then gateNeedsRelock = false; gateActor = nil end
         end
         if wasPower ~= current.powerFailure or wasGate ~= current.gateCompromised then
             TriggerClientEvent('parsons:security:State', -1, current)
@@ -312,7 +291,7 @@ CreateThread(function()
     end
 end)
 AddEventHandler('onResourceStop', function(resource)
-    if resource == GetCurrentResourceName() and gateNeedsRelock then syncGate(true) end
+    -- No physical gate state is mutated by this resource until the fork adapter is installed.
 end)
 exports('GetRecentSecurityIncidents', function()
     local caller = GetInvokingResource()
