@@ -90,7 +90,7 @@ end)
 -- Server-owned security state; interactions must be validated before invoking.
 local powerUntil, gateUntil, alarmUntil = 0, 0, 0
 local lastActionAt = {}
-local lastMonitoringAlert = 0
+local lastMonitoringAlert = -1000000000
 local alarmReason = nil
 local function raiseAlarm(reason)
     local duration = math.max(60, tonumber(Config.Security.alarm and Config.Security.alarm.durationSeconds) or 300)
