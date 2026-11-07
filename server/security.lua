@@ -126,14 +126,14 @@ local function act(src, action)
         powerUntil = now + math.max(30, tonumber(cfg.electrical.durationSeconds) or 180)
         if now - lastMonitoringAlert >= math.max(0, tonumber(cfg.monitoring and cfg.monitoring.incidentCooldownSeconds) or 120) then
             lastMonitoringAlert = now
-            emit('security_communications_failure', {powerUntil = powerUntil})
+            emit('security_communications_failure', {powerUntil = powerUntil, coords = {x = point.x, y = point.y, z = point.z}})
         end
     elseif action == 'gate_hack' then
         if not validPoint(src, cfg.gate.hack) or now < gateUntil then return false end
         gateUntil = now + math.max(30, tonumber(cfg.gate.compromisedSeconds) or 120)
         -- Physical gate unlock is deferred; security incident remains operational.
         raiseAlarm('gate_security_compromised')
-        emit('gate_security_compromised', {gateUntil = gateUntil})
+        emit('gate_security_compromised', {gateUntil = gateUntil, coords = {x = cfg.gate.hack.x, y = cfg.gate.hack.y, z = cfg.gate.hack.z}})
     else
         return false
     end
