@@ -94,9 +94,18 @@ end)
 local securityState = {powerFailure = false, gateCompromised = false, alarmActive = false}
 RegisterNetEvent('parsons:security:State', function(nextState)
     if type(nextState) ~= 'table' then return end
+    local previousPower = securityState.powerFailure
+    local previousGate = securityState.gateCompromised
     securityState.powerFailure = nextState.powerFailure == true
     securityState.gateCompromised = nextState.gateCompromised == true
     securityState.alarmActive = nextState.alarmActive == true
+    -- Scoped MLO integrations can subscribe without using global weather blackout.
+    if previousPower ~= securityState.powerFailure then
+        TriggerEvent('parsons:security:LocalPowerChanged', securityState.powerFailure)
+    end
+    if previousGate ~= securityState.gateCompromised then
+        TriggerEvent('parsons:security:LocalGateChanged', securityState.gateCompromised)
+    end
 end)
 RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
     TriggerServerEvent('parsons:security:RequestState')
