@@ -185,11 +185,11 @@ end)
 RegisterNetEvent('parsons:security:FinishAction', function(action, token, succeeded)
     local src = source
     local pending = attempts[src]
-    attempts[src] = nil
     if not pending or pending.action ~= action or pending.token ~= token then
         TriggerClientEvent('parsons:security:ActionResult', src, false, action)
         return
     end
+    attempts[src] = nil
     -- The client reports a minigame result, not proof of success. Enforce a
     -- server-observed minimum interaction duration and revalidate all conditions.
     local elapsed = os.time() - pending.started
