@@ -105,13 +105,14 @@ Config.FacilityZone = { -- Parsons PolyZone export, 2026-11-06; adjust vertical 
 Config.Security = {
     provider = 'Gruppe Sechs',
     minimumActionSeconds = 5, -- Server-side minimum; client skill checks alone cannot prove success.
+    actionRetrySeconds = 15, -- Prevent rapid repeated sabotage attempts.
     minigames = {
         electrical = {difficulty = {'easy', 'medium', 'medium'}, inputs = {'w', 'a', 's', 'd'}},
         gate = {difficulty = {'medium', 'medium', 'hard'}, inputs = {'w', 'a', 's', 'd'}}
     },
     aircraft = {enabled = true, verifySeconds = 5, cooldownSeconds = 180, exemptJobTypes = {'leo', 'ems', 'fire'}},
     monitoring = {incidentCooldownSeconds = 120},
-    alarm = {durationSeconds = 300, resetJobTypes = {'leo', 'ems'}, resetPoints = {}}, -- map qb-target reset stations at guard shack and medical offices
+    alarm = {durationSeconds = 300, resetJobTypes = {'leo', 'ems'}, resetPoints = {vector4(-1486.85, 881.13, 183.35, 341.37)}}, -- Guard shack; medical-office reset points await MLO mapping
     guard = {weapon = 'WEAPON_NIGHTSTICK', respawnSeconds = 300, clearRadius = 35.0, ped = 's_m_m_security_01'}, -- guard shack position pending
     power = {localOnly = true, restoreSeconds = 300, controllableLights = {}}, -- never invoke global qb-weathersync blackout
     PSDispatch = {enabled = true, jobs = {'police', 'sheriff', 'state', 'leo'}, codes = {
