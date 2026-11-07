@@ -156,7 +156,8 @@ local function PublicState(hold)
         roomReservationExpired = hold.roomReservationExpired == true,
         absent = hold.absentSince ~= nil,
         transportActive = hold.transport ~= nil and hold.transport.active == true,
-        roomId = hold.roomId
+        roomId = hold.roomId,
+        housingClassification = hold.housingClassification or 'standard'
     }
 end
 
