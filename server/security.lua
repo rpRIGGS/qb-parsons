@@ -258,8 +258,8 @@ RegisterNetEvent('parsons:security:ResetAlarm', function(index)
 end)
 RegisterNetEvent('parsons:security:RequestState', function()
     local src = source
-    TriggerClientEvent('parsons:security:State', src, state())
     local current = state()
+    TriggerClientEvent('parsons:security:State', src, current)
     if current.alarmActive then
         TriggerClientEvent('parsons:security:AlarmState', src, true, current.alarmReason)
     end
