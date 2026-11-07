@@ -86,6 +86,21 @@ CreateThread(function()
         end
     end
 end)
+local securityState = {powerFailure = false, gateCompromised = false, alarmActive = false}
+RegisterNetEvent('parsons:security:State', function(nextState)
+    if type(nextState) ~= 'table' then return end
+    securityState.powerFailure = nextState.powerFailure == true
+    securityState.gateCompromised = nextState.gateCompromised == true
+    securityState.alarmActive = nextState.alarmActive == true
+end)
+RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
+    TriggerServerEvent('parsons:security:RequestState')
+end)
+AddEventHandler('onResourceStart', function(resource)
+    if resource ~= GetCurrentResourceName() then return end
+    TriggerServerEvent('parsons:security:RequestState')
+end)
+
 RegisterNetEvent('parsons:security:AlarmState', function(active, reason)
     if active then
         lib.notify({title = 'Parsons security', description = 'Security alarm activated.', type = 'error'})
