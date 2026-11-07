@@ -6,12 +6,15 @@ local actions = {
 }
 local busy = false
 local requesting = false
+local requestSerial = 0
 local function start(key)
     if busy or requesting then return end
     requesting = true
+    requestSerial = requestSerial + 1
+    local serial = requestSerial
     TriggerServerEvent('parsons:security:BeginAction', key)
     SetTimeout(3000, function()
-        if requesting then
+        if requesting and requestSerial == serial then
             requesting = false
             lib.notify({title = 'Parsons security', description = 'Security action unavailable at this location or required tool missing.', type = 'error'})
         end
@@ -19,11 +22,13 @@ local function start(key)
 end
 RegisterNetEvent('parsons:security:BeginDenied', function(message)
     requesting = false
+    requestSerial = requestSerial + 1
     lib.notify({title = 'Parsons security', description = message or 'Security action denied.', type = 'error'})
 end)
 RegisterNetEvent('parsons:security:StartAction', function(key, token)
     if busy then return end
     requesting = false
+    requestSerial = requestSerial + 1
     local label
     for _, entry in ipairs(actions) do if entry.key == key then label = entry.label break end end
     if not label then return end
