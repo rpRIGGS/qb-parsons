@@ -157,7 +157,8 @@ local function PublicState(hold)
         absent = hold.absentSince ~= nil,
         transportActive = hold.transport ~= nil and hold.transport.active == true,
         roomId = hold.roomId,
-        housingClassification = hold.housingClassification or 'standard'
+        housingClassification = hold.housingClassification,
+        careSetting = hold.careSetting or (hold.kind == 'outpatient' and 'outpatient' or 'residential')
     }
 end
 
@@ -417,12 +418,15 @@ local function AssignRoom(Player, hold)
     local citizenid = Player.PlayerData.citizenid
     -- A missing KVP is not proof of ownership: another online patient may still
     -- hold this room after a restart. Reconcile the occupant before reusing it.
-    if hold.roomId and not hold.roomReservationExpired and RoomById(hold.roomId)
+    local currentRoom = hold.roomId and RoomById(hold.roomId)
+    local desiredHousing = hold.housingClassification == 'secure' and 'secure' or 'standard'
+    if currentRoom and not hold.roomReservationExpired
+        and ((desiredHousing == 'secure' and currentRoom.housing == 'secure')
+            or (desiredHousing == 'standard' and (currentRoom.housing == nil or currentRoom.housing == 'standard')))
         and (not RoomOwner(hold.roomId) or RoomOwner(hold.roomId) == citizenid)
         and not FindRoomOccupant(hold.roomId, citizenid) then
         return hold.roomId
     end
-    local desiredHousing = hold.housingClassification == 'secure' and 'secure' or 'standard'
     for _, room in ipairs(Config.PatientRooms or {}) do
         if type(room) == 'table' and type(room.id) == 'string' and room.id ~= ''
             and ((desiredHousing == 'secure' and room.housing == 'secure')
