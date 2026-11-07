@@ -74,7 +74,13 @@ exports('ReportVerifiedGuardIncident', function(kind)
     return true
 end)
 AddEventHandler('parsons:server:UnauthorizedDepartureVerified', function(src, citizenid)
-    emit('patient_departure', {citizenid = citizenid})
+    local coords
+    local ped = type(src) == 'number' and GetPlayerPed(src)
+    if ped and ped ~= 0 then
+        local pos = GetEntityCoords(ped)
+        coords = {x = pos.x, y = pos.y, z = pos.z}
+    end
+    emit('patient_departure', {citizenid = citizenid, coords = coords})
 end)
 AddEventHandler('parsons:server:PatientReturned', function(src, citizenid)
     emit('patient_return', {citizenid = citizenid})
