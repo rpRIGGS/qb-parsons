@@ -322,9 +322,6 @@ CreateThread(function()
         end
     end
 end)
-AddEventHandler('onResourceStop', function(resource)
-    -- No physical gate state is mutated by this resource until the fork adapter is installed.
-end)
 exports('GetRecentSecurityIncidents', function()
     local caller = GetInvokingResource()
     if caller ~= 'qb-ambulancejob' then return nil, 'untrusted resource' end
