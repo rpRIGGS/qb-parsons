@@ -179,6 +179,12 @@ RegisterNetEvent('parsons:security:FinishAction', function(action, token, succee
     local pending = attempts[src]
     attempts[src] = nil
     if not pending or pending.action ~= action or pending.token ~= token then return end
+    -- The client reports a minigame result, not proof of success. Enforce a
+    -- server-observed minimum interaction duration and revalidate all conditions.
+    local elapsed = os.time() - pending.started
+    local minimum = math.max(2, math.floor(tonumber(Config.Security and Config.Security.minimumActionSeconds) or 5))
+    if elapsed < minimum or elapsed > 120
+        or not validPoint(src, actionPoint(action)) or not hasTools(src, action) then return end
     if succeeded ~= true then
         if action == 'gate_hack' and validPoint(src, actionPoint(action)) then
             raiseAlarm('failed_gate_hack')
@@ -186,8 +192,6 @@ RegisterNetEvent('parsons:security:FinishAction', function(action, token, succee
         end
         return
     end
-    local elapsed = os.time() - pending.started
-    if elapsed < 1 or elapsed > 120 or not validPoint(src, actionPoint(action)) or not hasTools(src, action) then return end
     local applied = act(src, action)
     TriggerClientEvent('parsons:security:ActionResult', src, applied == true)
 end)
