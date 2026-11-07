@@ -31,3 +31,11 @@ This is a progress audit, **not** a Stage 7 completion claim.
 - Live FiveM testing has not occurred.
 
 **Status:** Stage 7 core code paths reviewed and corrected, but the playable sabotage stations and local blackout effects are **not complete** without MLO coordinates/light mappings. The future physical gate adapter is separately deferred. Do not mark Task 2 fully complete until those limitations are resolved or expressly accepted as out-of-scope.
+
+## Continued Task 2 fixes — 2026-11-07
+
+- Fixed an additional disconnect edge case in `server/main.lua`: a checked-in residential patient who disconnects now receives `reentryInventoryPending`, so reconnecting inside cannot silently bypass reentry inventory clearance.
+- Client sabotage flow now runs an ox_lib progress step after a successful skill check, meeting the server's minimum elapsed-time requirement; interrupted progress is reported as failure.
+- Server minimum elapsed time applies to **successful** hacks. A quickly failed gate skill check can still raise a verified attempted-tampering alarm, provided the player remains at the mapped interaction point with the configured item.
+- QB admin menu weather/time/blackout controls were reported nonfunctional by the server owner. That issue is separate from Stage 7 and is **not** a valid Parsons blackout test. Whether this MLO responds to game-wide blackout natives is unverified; no global blackout is being triggered by Parsons.
+- Remaining integration inputs: actual electrical and gate hack coordinates, confirmation of how the MLO lights behave, and live FiveM validation. Do not invent coordinates or claim visual blackout functionality until verified.
