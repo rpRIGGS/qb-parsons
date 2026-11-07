@@ -598,9 +598,23 @@ RegisterNetEvent('parsons:server:RequestDischargeStatus', function()
     local src = source
     local Player = GetPlayer(src)
     if not Player then return end
-    local desk = (Config.GuardShack and Config.GuardShack.coords) or (Config.Reception and Config.Reception.coords)
+    -- Status is available at either medical reception PED or the guard shack.
+    -- Do not let the existence of a guard coordinate hide both reception desks.
     local ped = GetPlayerPed(src)
-    if not desk or ped == 0 or #(GetEntityCoords(ped) - vec3(desk.x, desk.y, desk.z)) > 5.0 then return end
+    if not ped or ped == 0 then return end
+    local pos = GetEntityCoords(ped)
+    local function Near(point)
+        return point and point.x and point.y and point.z
+            and #(pos - vec3(point.x, point.y, point.z)) <= 5.0
+    end
+    local nearby = Near(Config.GuardShack and Config.GuardShack.coords)
+        or Near(Config.Reception and Config.Reception.coords)
+    if not nearby then
+        for _, point in ipairs((Config.Reception and Config.Reception.additionalCoords) or {}) do
+            if Near(point) then nearby = true break end
+        end
+    end
+    if not nearby then return end
     local hold = TickHold(Player)
     if not hold then
         TriggerClientEvent('QBCore:Notify', src, Lang:t('error.no_active_hold'), 'error')
