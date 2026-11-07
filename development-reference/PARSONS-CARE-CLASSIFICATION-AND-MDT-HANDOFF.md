@@ -59,3 +59,8 @@ Scope: qb-parsons operational implementation, with future SAMS.net and SADOJ.net
 - Parsons retains the server-side `AuthorizeDoorInteraction` policy export and existing room-access logic as preparation. Neither export currently enforces physical qb-doorlock state. Treat live door authorization as **pending integration and in-game validation**, not as complete.
 - The existing `QB-DOORLOCK-SERVER-ADAPTER.md` is an exploratory reference only; it is **not** an approved drop-in patch and must be re-reviewed against the actual fork and all bypass paths before deployment.
 - Continue current Task 1 admissions, classification, belongings, and discharge work, then proceed with the agreed task sequence. Do not make qb-doorlock a Task 1 blocker; retain it as a tracked later-stage dependency.
+
+## Task 1 reentry correction (2026-11-07)
+- Fixed a real race: `UpdateAbsence` could reset `absentSince` automatically on crossing back inside before reception had cleared escaped inventory. `reentryInventoryPending` now persists independently until successful reception processing.
+- While pending, treatment countdown and patient-specific bedroom access are suspended. A room reservation is not itself revoked until the configured grace expiration; original admission inventory custody is not overwritten.
+- The physical qb-doorlock hook remains a later-stage fork integration, already documented separately. This does not block Task 1's operational workflow implementation.
