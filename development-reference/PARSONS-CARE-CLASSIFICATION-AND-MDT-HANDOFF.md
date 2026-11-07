@@ -52,3 +52,10 @@ Scope: qb-parsons operational implementation, with future SAMS.net and SADOJ.net
 - $20 vending cash allowance, pay phones, physical cash migration and QB Shops commissary are *ideas/independent configuration*, not implemented in qb-parsons.
 - Door policy export `CanAccessRoomDoor` is implemented but is **not** actual qb-doorlock enforcement. Await verified original doorlock config and server API; do not fabricate integration or claim the doors are secured.
 - Live in-game behavior remains unverified. No special qb-inventory compatibility concern exists: the user's custom UI uses standard QBCore qb-inventory APIs.
+
+## Sequencing decision — qb-doorlock fork (2026-11-07)
+- User plans a separate fork of qb-doorlock in the development projects folder, with its own chat and broader feature requirements. Do **not** start or expand that project inside qb-parsons.
+- **Defer installation and implementation of the qb-doorlock integration patch** until the later qb-ambulancejob integration stage (exact task number to confirm against the master checklist). Batch the Parsons door authorization hook with the user's planned qb-doorlock fork improvements to avoid duplicate work.
+- Parsons retains the server-side `AuthorizeDoorInteraction` policy export and existing room-access logic as preparation. Neither export currently enforces physical qb-doorlock state. Treat live door authorization as **pending integration and in-game validation**, not as complete.
+- The existing `QB-DOORLOCK-SERVER-ADAPTER.md` is an exploratory reference only; it is **not** an approved drop-in patch and must be re-reviewed against the actual fork and all bypass paths before deployment.
+- Continue current Task 1 admissions, classification, belongings, and discharge work, then proceed with the agreed task sequence. Do not make qb-doorlock a Task 1 blocker; retain it as a tracked later-stage dependency.
