@@ -33,9 +33,7 @@ RegisterNetEvent('parsons:security:StartAction', function(key, token)
         }) == true
     end
     busy = false
-    if not success then
-        lib.notify({title = 'Security bypass', description = 'Bypass unsuccessful or interrupted.', type = 'error'})
-    end
+    -- Server validates and returns the final result (including failed gate alarm).
     TriggerServerEvent('parsons:security:FinishAction', key, token, success == true)
 end)
 RegisterNetEvent('parsons:security:ActionResult', function(applied, action)
