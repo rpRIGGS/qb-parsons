@@ -600,6 +600,45 @@ local function RoomForDoor(doorId)
         end
     end
 end
+local function IsParsonsManagedDoor(doorId)
+    if type(doorId) ~= 'string' and type(doorId) ~= 'number' then return false end
+    if RoomForDoor(doorId) then return true end
+    for _, room in ipairs(Config.ObservationRooms or {}) do
+        for _, id in ipairs(room.doorIds or {}) do
+            if id == doorId then return true end
+        end
+    end
+    for _, id in ipairs(Config.SecureWardGateDoorIds or {}) do
+        if id == doorId then return true end
+    end
+    return false
+end
+
+local function IsAuthorizedParsonsStaff(Player)
+    local job = Player.PlayerData.job
+    if not job or not job.onduty then return false end
+    for _, allowed in ipairs(Config.PatientRoomStaffJobTypes or {'ems'}) do
+        if job.type == allowed or job.name == allowed then return true end
+    end
+    return false
+end
+
+-- Tri-state door authorization: nil = not a Parsons-managed door;
+-- true/false = mandatory Parsons decision for qb-doorlock to enforce.
+exports('AuthorizeDoorInteraction', function(src, doorId)
+    if not IsParsonsManagedDoor(doorId) then return nil end
+    local Player = GetPlayer(tonumber(src))
+    if not Player then return false end
+    if IsAuthorizedParsonsStaff(Player) then return true end
+    local roomId = RoomForDoor(doorId)
+    if not roomId then return false end -- secure gate / observation: staff only
+    local hold = GetHold(Player)
+    return hold ~= nil and hold.checkedIn == true and not hold.roomReservationExpired
+        and hold.absentSince == nil and InsideFacility(tonumber(src))
+        and not (hold.transport and hold.transport.active) and hold.roomId == roomId
+        and RoomOwner(roomId) == Player.PlayerData.citizenid
+end)
+
 local function CanAccessRoomDoor(src, doorId)
     local Player = GetPlayer(src)
     if not Player then return false end
