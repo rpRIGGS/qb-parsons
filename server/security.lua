@@ -171,7 +171,7 @@ RegisterNetEvent('parsons:security:BeginAction', function(action)
     end
     if (action == 'gate_hack' and now < gateUntil)
         or ((action == 'electrical_inside' or action == 'electrical_outside') and now < powerUntil) then
-        TriggerClientEvent('parsons:security:ActionResult', src, false, action)
+        TriggerClientEvent('parsons:security:BeginDenied', src, 'Security system already compromised. Wait for restoration.')
         return
     end
     if now < (lastActionAt[src] or 0) then
