@@ -224,7 +224,10 @@ RegisterNetEvent('parsons:security:ResetAlarm', function(index)
     local cfg = Config.Security and Config.Security.alarm
     if not cfg or type(index) ~= 'number' or index % 1 ~= 0 then return end
     local point = cfg.resetPoints and cfg.resetPoints[index]
-    if not validPoint(src, point) then return end
+    if not validPoint(src, point) then
+        TriggerClientEvent('parsons:security:AlarmResetResult', src, false, 'You must be at an authorized alarm reset station.')
+        return
+    end
     local player = QBCore.Functions.GetPlayer(src)
     local job = player and player.PlayerData and player.PlayerData.job
     if not job or not job.onduty then return end
@@ -232,7 +235,14 @@ RegisterNetEvent('parsons:security:ResetAlarm', function(index)
     for _, kind in ipairs(cfg.resetJobTypes or {}) do
         if job.type == kind then allowed = true; break end
     end
-    if not allowed or os.time() >= alarmUntil then return end
+    if not allowed then
+        TriggerClientEvent('parsons:security:AlarmResetResult', src, false, 'Only authorized on-duty emergency staff may reset this alarm.')
+        return
+    end
+    if os.time() >= alarmUntil then
+        TriggerClientEvent('parsons:security:AlarmResetResult', src, false, 'There is no active Parsons alarm.')
+        return
+    end
     alarmUntil = 0
     alarmReason = nil
     TriggerClientEvent('parsons:security:AlarmState', -1, false)
