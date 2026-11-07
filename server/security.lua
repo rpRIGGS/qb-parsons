@@ -287,7 +287,10 @@ CreateThread(function()
             TriggerEvent('parsons:security:AlarmChanged', false, 'failsafe_timeout')
             TriggerClientEvent('parsons:security:State', -1, state())
         end
-        if wasPower and not current.powerFailure then emit('security_communications_restored') end
+        if wasPower and not current.powerFailure then
+            emit('security_communications_restored')
+            TriggerEvent('parsons:security:PowerRestored')
+        end
         if wasGate and not current.gateCompromised then
             emit('gate_security_restored')
         end
