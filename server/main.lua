@@ -489,6 +489,7 @@ local function CanAccessRoomDoor(src, doorId)
     end
     local hold = GetHold(Player)
     return hold ~= nil and hold.checkedIn == true and not hold.roomReservationExpired
+        and hold.absentSince == nil and InsideFacility(src)
         and not (hold.transport and hold.transport.active) and hold.roomId == roomId
         and RoomOwner(roomId) == Player.PlayerData.citizenid
 end
