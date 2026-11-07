@@ -89,6 +89,7 @@ AddEventHandler('parsons:server:PatientReturned', function(src, citizenid)
 end)
 -- Server-owned security state; interactions must be validated before invoking.
 local powerUntil, gateUntil, alarmUntil = 0, 0, 0
+local lastActionAt = {}
 local alarmReason = nil
 local function raiseAlarm(reason)
     local duration = math.max(60, tonumber(Config.Security.alarm and Config.Security.alarm.durationSeconds) or 300)
@@ -117,6 +118,7 @@ local function act(src, action)
     local cfg = Config.Security
     if not cfg or not cfg.electrical or not cfg.gate then return false end
     local now = os.time()
+    if not src or not QBCore.Functions.GetPlayer(src) then return false end
     if action == 'electrical_inside' or action == 'electrical_outside' then
         local point = action == 'electrical_inside' and cfg.electrical.inside or cfg.electrical.outside
         if not validPoint(src, point) or now < powerUntil then return false end
@@ -160,6 +162,8 @@ RegisterNetEvent('parsons:security:BeginAction', function(action)
     if type(action) ~= 'string' or not validPoint(src, actionPoint(action)) or not hasTools(src, action) then return end
     local now = os.time()
     if attempts[src] and now - attempts[src].started < 120 then return end
+    if now < (lastActionAt[src] or 0) then return end
+    lastActionAt[src] = now + math.max(5, tonumber(Config.Security.actionRetrySeconds) or 15)
     attempts[src] = {action = action, started = now, token = math.random(100000,999999)}
     TriggerClientEvent('parsons:security:StartAction', src, action, attempts[src].token)
 end)
@@ -208,7 +212,10 @@ end)
 RegisterNetEvent('parsons:security:RequestState', function()
     TriggerClientEvent('parsons:security:State', source, state())
 end)
-AddEventHandler('playerDropped', function() attempts[source] = nil end)
+AddEventHandler('playerDropped', function()
+    attempts[source] = nil
+    lastActionAt[source] = nil
+end)
 -- Deliberately restricted: no untrusted client event can assert a successful hack.
 exports('ApplyVerifiedSecurityAction', function(src, action)
     local caller = GetInvokingResource()
