@@ -156,7 +156,7 @@ local function hasTools(src, action)
     local item = action == 'gate_hack' and cfg.gate.item or cfg.electrical.item
     if type(item) ~= 'string' or item == '' then return false end
     local found = player.Functions.GetItemByName(item)
-    return found and (found.amount or 0) >= 1
+    return found ~= nil and (tonumber(found.amount) or 0) >= 1
 end
 RegisterNetEvent('parsons:security:BeginAction', function(action)
     local src = source
