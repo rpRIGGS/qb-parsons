@@ -121,6 +121,7 @@ end
 local function act(src, action)
     local cfg = Config.Security
     if not cfg or not cfg.electrical or not cfg.gate then return false end
+    if action ~= 'electrical_inside' and action ~= 'electrical_outside' and action ~= 'gate_hack' then return false end
     local now = os.time()
     if not src or not QBCore.Functions.GetPlayer(src) then return false end
     if action == 'electrical_inside' or action == 'electrical_outside' then
