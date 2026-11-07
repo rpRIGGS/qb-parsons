@@ -594,7 +594,7 @@ RegisterNetEvent('parsons:server:ReceptionCheckIn', function()
     end
     if not nearby then return end
     local hold = GetHold(Player)
-    if not hold or (hold.checkedIn and not hold.roomReservationExpired) then return end
+    if not hold or hold.kind == 'outpatient' or (hold.checkedIn and not hold.roomReservationExpired) then return end
     if hold.checkedIn and hold.roomReservationExpired then
         local roomId = AssignRoom(Player, hold)
         if not roomId then
@@ -746,6 +746,12 @@ exports('DischargePatient', function(targetId, authority)
     if hold.kind == 'court' and authority ~= 'judicial' then return false, 'judicial clearance required' end
     if hold.kind == 'medical' and authority ~= 'medical' and authority ~= 'judicial' then
         return false, 'medical clearance required'
+    end
+    if hold.kind == 'voluntary' and authority ~= 'medical' and authority ~= 'voluntary' then
+        return false, 'voluntary program discharge requires staff or patient consent'
+    end
+    if hold.kind == 'outpatient' and authority ~= 'medical' and authority ~= 'voluntary' then
+        return false, 'outpatient closure requires staff or patient consent'
     end
     local dischargeSnapshot = {
         kind = hold.kind, phase = hold.phase, roomId = hold.roomId,
