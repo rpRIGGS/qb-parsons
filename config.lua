@@ -104,6 +104,7 @@ Config.FacilityZone = { -- Parsons PolyZone export, 2026-11-06; adjust vertical 
 -- maxZ is also the aircraft alert ceiling; minZ is the property floor.
 Config.Security = {
     provider = 'Gruppe Sechs',
+    minimumActionSeconds = 5, -- Server-side minimum; client skill checks alone cannot prove success.
     minigames = {
         electrical = {difficulty = {'easy', 'medium', 'medium'}, inputs = {'w', 'a', 's', 'd'}},
         gate = {difficulty = {'medium', 'medium', 'hard'}, inputs = {'w', 'a', 's', 'd'}}
