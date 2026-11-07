@@ -39,3 +39,11 @@ This is a progress audit, **not** a Stage 7 completion claim.
 - Server minimum elapsed time applies to **successful** hacks. A quickly failed gate skill check can still raise a verified attempted-tampering alarm, provided the player remains at the mapped interaction point with the configured item.
 - QB admin menu weather/time/blackout controls were reported nonfunctional by the server owner. That issue is separate from Stage 7 and is **not** a valid Parsons blackout test. Whether this MLO responds to game-wide blackout natives is unverified; no global blackout is being triggered by Parsons.
 - Remaining integration inputs: actual electrical and gate hack coordinates, confirmation of how the MLO lights behave, and live FiveM validation. Do not invent coordinates or claim visual blackout functionality until verified.
+
+## Coordinate placeholders and implementation policy
+
+Task 2 is **not** blocked on obtaining map coordinates. The complete qb-target sabotage interaction pipeline is implemented and parameterized. `Config.Security.electrical.inside`, `electrical.outside`, and `gate.hack` are intentionally left as clearly labeled `nil` placeholders; replacing each with a captured `vector4(x,y,z,heading)` enables that station without a code rewrite. The guard-shack alarm reset already has a mapped position.
+
+The server owner confirms that the Parsons MLO responds to GTA blackout behavior from prior development testing. Do not reopen that factual question. The Parsons resource deliberately does not trigger a global blackout, and visual blackout scope remains a separate integration choice rather than a reason to defer the security code.
+
+Stage 7 code implementation is ready for the eventual server validation pass, apart from the explicitly deferred physical qb-doorlock adapter. **No live server test has been run in this session.**
