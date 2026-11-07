@@ -367,9 +367,11 @@ local function AssignRoom(Player, hold)
         and not FindRoomOccupant(hold.roomId, citizenid) then
         return hold.roomId
     end
+    local desiredHousing = hold.housingClassification == 'secure' and 'secure' or 'standard'
     for _, room in ipairs(Config.PatientRooms or {}) do
         if type(room) == 'table' and type(room.id) == 'string' and room.id ~= ''
-            and (room.housing == nil or room.housing == 'standard') -- secure housing requires staff classification
+            and ((desiredHousing == 'secure' and room.housing == 'secure')
+                or (desiredHousing == 'standard' and (room.housing == nil or room.housing == 'standard')))
             and not roomLocks[room.id] and not RoomOwner(room.id)
             and not FindRoomOccupant(room.id, citizenid) then
             return room.id
@@ -377,6 +379,26 @@ local function AssignRoom(Player, hold)
     end
     return nil
 end
+
+-- Housing classification is clinical/operational, independent of legal hold kind.
+-- Only trusted server integrations may classify a pending admission; court status
+-- alone never implies secure housing. No client-facing event changes this field.
+exports('ClassifyPendingAdmission', function(targetId, classification)
+    if not IsTrustedCaller() then return false, 'untrusted resource' end
+    if classification ~= 'standard' and classification ~= 'secure' then
+        return false, 'invalid housing classification'
+    end
+    local Player = GetPlayer(targetId)
+    if not Player then return false, 'patient offline' end
+    local hold = GetHold(Player)
+    if not hold or hold.checkedIn then return false, 'requires pending admission' end
+    hold.housingClassification = classification
+    SetHold(Player, hold)
+    Player.Functions.Save()
+    TriggerEvent('parsons:server:AdmissionClassified', Player.PlayerData.source,
+        Player.PlayerData.citizenid, classification)
+    return true
+end)
 
 -- Authorized staff integration: explicitly classify a checked-in patient into a secure
 -- basement bedroom. Court holds are NOT automatically assigned secure housing.
