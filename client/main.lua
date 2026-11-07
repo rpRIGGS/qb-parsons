@@ -35,6 +35,16 @@ RegisterNetEvent('parsons:client:Admit', function(state)
     QBCore.Functions.Notify('Commitment recorded. Report to Parsons reception for check-in.', 'primary')
 end)
 
+-- Outpatient enrollment is not residential custody and must not teleport or dress the patient.
+RegisterNetEvent('parsons:client:OutpatientEnrolled', function(state)
+    if type(state) ~= 'table' or not state.active or state.careSetting ~= 'outpatient' then return end
+    refreshSerial = refreshSerial + 1
+    hold = state
+    admitted = true
+    TriggerEvent('parsons:client:AdmissionState', true)
+    QBCore.Functions.Notify('Parsons outpatient enrollment recorded.', 'success')
+end)
+
 RegisterNetEvent('parsons:client:ReceptionComplete', function(state)
     if type(state) ~= 'table' or not state.active or not state.checkedIn then return end
     hold = state
