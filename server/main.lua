@@ -175,6 +175,14 @@ local function BuildHold(kind, phase, days)
     if kind == 'medical' then
         local permitted = {evaluation = 3, evaluation_extension = 7, treatment_extension = 28}
         if permitted[phase] ~= days then return nil, 'invalid medical hold duration' end
+    elseif kind == 'voluntary' then
+        -- Staff-approved 7/28-day residential programs are not involuntary holds.
+        local permitted = {residential_7 = 7, residential_28 = 28}
+        if permitted[phase] ~= days then return nil, 'invalid voluntary program duration' end
+    elseif kind == 'outpatient' then
+        -- Appointments/evaluations do not create residential custody or inventory seizure.
+        if phase ~= 'evaluation' and phase ~= 'treatment' then return nil, 'invalid outpatient phase' end
+        if days ~= nil then return nil, 'outpatient care does not use residential days' end
     elseif kind == 'court' then
         if days ~= nil and (type(days) ~= 'number' or days ~= math.floor(days) or days < 1 or days > 36500) then
             return nil, 'invalid court duration'
@@ -370,6 +378,8 @@ exports('AdmitPatient', function(targetId, kind, phase, days)
     -- Court/medical order records a pending arrival; custody is deferred to reception.
     if GetBelongings(Player) then return false, 'existing belongings require reconciliation' end
     hold.checkedIn = false
+    hold.careSetting = kind == 'outpatient' and 'outpatient' or 'residential'
+    hold.housingClassification = kind == 'outpatient' and nil or 'standard'
     SetHold(Player, hold)
     Player.Functions.Save()
     lastTick[Player.PlayerData.source] = os.time()
