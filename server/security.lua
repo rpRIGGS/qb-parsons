@@ -298,7 +298,9 @@ CreateThread(function()
         end
         if wasPower ~= current.powerFailure or wasGate ~= current.gateCompromised then
             TriggerClientEvent('parsons:security:State', -1, current)
-            TriggerEvent('parsons:security:GateStateChanged', current)
+            if wasGate ~= current.gateCompromised then
+                TriggerEvent('parsons:security:GateStateChanged', current)
+            end
         end
         wasPower, wasGate = current.powerFailure, current.gateCompromised
     end
