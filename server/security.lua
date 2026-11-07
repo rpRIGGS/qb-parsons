@@ -186,7 +186,7 @@ RegisterNetEvent('parsons:security:FinishAction', function(action, token, succee
         return
     end
     local applied = act(src, action)
-    TriggerClientEvent('parsons:security:ActionResult', src, applied == true)
+    TriggerClientEvent('parsons:security:ActionResult', src, applied == true, action)
 end)
 RegisterNetEvent('parsons:security:ResetAlarm', function(index)
     local src = source
