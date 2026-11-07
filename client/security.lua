@@ -28,8 +28,14 @@ RegisterNetEvent('parsons:security:StartAction', function(key, token)
     end
     TriggerServerEvent('parsons:security:FinishAction', key, token, success == true)
 end)
-RegisterNetEvent('parsons:security:ActionResult', function(applied)
-    lib.notify({title = 'Security bypass', description = applied and 'Security incident registered. Physical gate control requires the doorlock adapter.' or 'Security bypass rejected.', type = applied and 'success' or 'error'})
+RegisterNetEvent('parsons:security:ActionResult', function(applied, action)
+    local description = 'Security bypass rejected.'
+    if applied and action == 'gate_hack' then
+        description = 'Gate compromise alarm registered. Physical unlocking awaits the doorlock adapter.'
+    elseif applied then
+        description = 'Local security communications interruption registered.'
+    end
+    lib.notify({title = 'Parsons security', description = description, type = applied and 'success' or 'error'})
 end)
 CreateThread(function()
     Wait(1000)
