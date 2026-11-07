@@ -411,6 +411,9 @@ exports('AssignSecureRoom', function(targetId, roomId)
     Player.Functions.Save()
     if previousRoom ~= roomId then ClearRoomReservation(previousRoom, citizenid) end
     roomLocks[roomId] = nil
+    print(('[qb-parsons] Secure housing assignment: patient %s, previous %s, assigned %s, caller %s'):format(
+        citizenid, tostring(previousRoom or 'none'), roomId, tostring(GetInvokingResource() or 'unknown')))
+    TriggerEvent('parsons:server:SecureRoomAssigned', Player.PlayerData.source, citizenid, roomId, previousRoom)
     TriggerClientEvent('parsons:client:RoomAssignmentChanged', Player.PlayerData.source, PublicState(hold))
     TriggerEvent('parsons:server:RoomAssigned', Player.PlayerData.source, citizenid, roomId)
     return true
