@@ -123,7 +123,7 @@ local function act(src, action)
     if not cfg or not cfg.electrical or not cfg.gate then return false end
     if action ~= 'electrical_inside' and action ~= 'electrical_outside' and action ~= 'gate_hack' then return false end
     local now = os.time()
-    if not src or not QBCore.Functions.GetPlayer(src) then return false end
+    if type(src) ~= 'number' or src < 1 or not QBCore.Functions.GetPlayer(src) then return false end
     if action == 'electrical_inside' or action == 'electrical_outside' then
         local point = action == 'electrical_inside' and cfg.electrical.inside or cfg.electrical.outside
         if not validPoint(src, point) or now < powerUntil then return false end
