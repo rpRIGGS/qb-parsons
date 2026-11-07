@@ -431,7 +431,8 @@ exports('AdmitPatient', function(targetId, kind, phase, days)
     lastTick[Player.PlayerData.source] = os.time()
     lastEligible[Player.PlayerData.source] = false
     lastInside[Player.PlayerData.source] = nil
-    TriggerClientEvent('parsons:client:Admit', Player.PlayerData.source, PublicState(hold))
+    TriggerClientEvent(kind == 'outpatient' and 'parsons:client:OutpatientEnrolled' or 'parsons:client:Admit',
+        Player.PlayerData.source, PublicState(hold))
     return true
 end)
 
