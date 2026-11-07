@@ -433,6 +433,7 @@ exports('AssignSecureRoom', function(targetId, roomId)
     hold.roomId = roomId
     hold.roomReservationExpired = false
     hold.secureHousingAssignedAt = os.time()
+    hold.housingClassification = 'secure'
     SetHold(Player, hold)
     Player.Functions.Save()
     if previousRoom ~= roomId then ClearRoomReservation(previousRoom, citizenid) end
@@ -476,6 +477,7 @@ exports('AssignResidentialRoom', function(targetId, roomId)
     hold.roomId = roomId
     hold.roomReservationExpired = false
     hold.residentialHousingAssignedAt = os.time()
+    hold.housingClassification = 'standard'
     SetHold(Player, hold)
     Player.Functions.Save()
     if previousRoom ~= roomId then ClearRoomReservation(previousRoom, citizenid) end
