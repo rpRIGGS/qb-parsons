@@ -172,6 +172,12 @@ end)
     while #notes > NOTE_LIMIT do table.remove(notes, 1) end
     patient.Functions.SetMetaData(NOTE_KEY, {admissionStartedAt = hold.startedAt, entries = notes})
     patient.Functions.Save()
+    TriggerEvent('parsons:operations:ShiftNoteRecorded', {
+        patientCitizenId = patient.PlayerData.citizenid,
+        staffCitizenId = staff.PlayerData.citizenid,
+        admissionStartedAt = hold.startedAt,
+        recordedAt = notes[#notes].at
+    })
     TriggerClientEvent('parsons:operations:NoteResult', src, true, 'Shift note saved.')
 end)
 
