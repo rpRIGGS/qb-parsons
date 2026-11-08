@@ -64,6 +64,8 @@ local lastGuardAlert = 0
 local guardEntity = 0
 local guardDeadAt = nil
 local guardAlerted = false
+local guardPreviousHealth = nil
+local guardAssaultAlertAt = 0
 
 -- Network-owned guard: server observes health/death, rather than trusting
 -- client reports about a locally spawned NPC.
@@ -78,10 +80,18 @@ CreateThread(function()
                 guardEntity = CreatePed(4, model, point.x, point.y, point.z - 1.0, point.w or 0.0, true, true)
                 guardDeadAt = nil
                 guardAlerted = false
+                guardPreviousHealth = nil
                 if guardEntity and guardEntity ~= 0 then
                     SetEntityOrphanMode(guardEntity, 2)
                     TriggerClientEvent('parsons:security:GuardNetworkId', -1, NetworkGetNetworkIdFromEntity(guardEntity))
                 end
+            elseif GetEntityHealth(guardEntity) > 0 then
+                local health = GetEntityHealth(guardEntity)
+                if guardPreviousHealth and health < guardPreviousHealth and os.time() - guardAssaultAlertAt >= 120 then
+                    guardAssaultAlertAt = os.time()
+                    emit('guard_assault', {coords = {x = point.x, y = point.y, z = point.z}, provider = 'Gruppe Sechs'})
+                end
+                guardPreviousHealth = health
             elseif GetEntityHealth(guardEntity) <= 0 then
                 guardDeadAt = guardDeadAt or os.time()
                 if not guardAlerted then
