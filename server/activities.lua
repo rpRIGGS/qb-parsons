@@ -44,9 +44,15 @@ RegisterNetEvent('parsons:server:StartActivity', function(id)
     local src = source
     local def = type(id) == 'string' and Config.Activities[id]
     if not def or not patient(src) or not nearStation(src, id) then return end
-    if active[src] then return end
+    if active[src] then
+        TriggerClientEvent('QBCore:Notify', src, 'Finish or cancel your current activity first.', 'error')
+        return
+    end
     local now = os.time()
-    if (cooldowns[src] and cooldowns[src][id] or 0) > now then return end
+    if (cooldowns[src] and cooldowns[src][id] or 0) > now then
+        TriggerClientEvent('QBCore:Notify', src, 'This activity is on cooldown.', 'error')
+        return
+    end
     local duration = math.max(10, math.min(1800, math.floor(tonumber(def.durationSeconds) or 60)))
     nextSessionId = nextSessionId + 1
     active[src] = {
