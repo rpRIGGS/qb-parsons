@@ -1,5 +1,30 @@
 -- Stage 8 medical operations terminal; qb-target is required.
 local QBCore = exports['qb-core']:GetCoreObject({'Functions'})
+local function showActivityHistory(patient)
+    QBCore.Functions.TriggerCallback('parsons:operations:GetActivityHistory', function(result)
+        if not result or not result.authorized then
+            lib.notify({title = 'Parsons operations', description = result and result.reason or 'Access denied.', type = 'error'})
+            return
+        end
+        local options = {}
+        local history = result.history or {}
+        for i = #history, 1, -1 do
+            local entry = history[i]
+            local def = Config.Activities[entry.id]
+            options[#options + 1] = {
+                title = (def and def.label) or entry.id or 'Activity',
+                description = os.date('%Y-%m-%d %H:%M', entry.completedAt or os.time()) ..
+                    ' | ' .. tostring(entry.durationSeconds or 0) .. ' seconds',
+                icon = 'clipboard-check', readOnly = true
+            }
+        end
+        if #options == 0 then options[1] = {title = 'No completed activities', readOnly = true} end
+        lib.registerContext({id = 'parsons_patient_activities', title = 'Activities — ' .. patient.name,
+            menu = 'parsons_medical_census', options = options})
+        lib.showContext('parsons_patient_activities')
+    end, patient.id)
+end
+
 local function showPatientNotes(patient)
     QBCore.Functions.TriggerCallback('parsons:operations:GetShiftNotes', function(result)
         if not result or not result.authorized then
@@ -58,7 +83,16 @@ local function openCensus()
                     patient.careSetting or 'residential', patient.phase or patient.kind or 'care',
                     patient.room or 'Unassigned', status),
                 icon = 'user-doctor',
-                onSelect = function() showPatientNotes(patient) end
+                onSelect = function()
+                    lib.registerContext({id = 'parsons_patient_actions', title = patient.name,
+                        menu = 'parsons_medical_census', options = {
+                            {title = 'Shift handoff notes', icon = 'note-sticky',
+                                onSelect = function() showPatientNotes(patient) end},
+                            {title = 'Completed activities', icon = 'clipboard-check',
+                                onSelect = function() showActivityHistory(patient) end}
+                        }})
+                    lib.showContext('parsons_patient_actions')
+                end
             }
         end
         if #options == 0 then
