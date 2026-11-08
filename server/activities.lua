@@ -35,7 +35,8 @@ local function patient(src)
     local ped = GetPlayerPed(src)
     if not ped or ped == 0 or GetEntityHealth(ped) <= 0 then return nil end
     local zone = Config.FacilityZone
-    if not zone or type(zone.points) ~= 'table' or #zone.points < 3 then return nil end
+    if not zone or type(zone.points) ~= 'table' or #zone.points < 3
+        or type(zone.minZ) ~= 'number' or type(zone.maxZ) ~= 'number' then return nil end
     local pos = GetEntityCoords(ped)
     if pos.z < zone.minZ or pos.z > zone.maxZ then return nil end
     local inside, j = false, #zone.points
