@@ -57,9 +57,8 @@ local function emit(kind, details)
     end
     print(('[qb-parsons] Security incident %d: %s'):format(record.id, kind))
 end
--- Guard peds are currently client-local. A client report cannot prove damage or death,
--- so there is intentionally NO network event that converts such reports into dispatch.
--- A future network-owned guard can use this trusted resource-only integration point.
+-- Guard alerts use server-observed health and death of the network-owned NPC.
+-- Client damage claims are never accepted as authoritative.
 local lastGuardAlert = 0
 local guardEntity = 0
 local guardDeadAt = nil
