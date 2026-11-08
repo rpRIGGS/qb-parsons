@@ -34,6 +34,20 @@ local function patient(src)
         or (h.transport and h.transport.active == true) then return nil end
     local ped = GetPlayerPed(src)
     if not ped or ped == 0 or GetEntityHealth(ped) <= 0 then return nil end
+    local zone = Config.FacilityZone
+    if not zone or type(zone.points) ~= 'table' or #zone.points < 3 then return nil end
+    local pos = GetEntityCoords(ped)
+    if pos.z < zone.minZ or pos.z > zone.maxZ then return nil end
+    local inside, j = false, #zone.points
+    for i = 1, #zone.points do
+        local a, b = zone.points[i], zone.points[j]
+        if (a.y > pos.y) ~= (b.y > pos.y)
+            and pos.x < (b.x - a.x) * (pos.y - a.y) / (b.y - a.y) + a.x then
+            inside = not inside
+        end
+        j = i
+    end
+    if not inside then return nil end
     return p
 end
 local function nearStation(src, id)
