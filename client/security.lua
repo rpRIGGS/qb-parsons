@@ -107,7 +107,9 @@ local function applyFixtureOutage(active)
         return
     end
     for _, fixture in ipairs((Config.Security.power and Config.Security.power.controllableLights) or {}) do
-        if fixture.model and fixture.coords and fixture.coords.x and fixture.coords.y and fixture.coords.z then
+        if (type(fixture.model) == 'string' or type(fixture.model) == 'number')
+            and fixture.coords and type(fixture.coords.x) == 'number'
+            and type(fixture.coords.y) == 'number' and type(fixture.coords.z) == 'number' then
             local model = type(fixture.model) == 'number' and fixture.model or joaat(fixture.model)
             local origin = vector3(fixture.coords.x, fixture.coords.y, fixture.coords.z)
             local radius = math.max(0.5, tonumber(fixture.radius) or 2.0)
