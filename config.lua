@@ -1,5 +1,5 @@
 Config = {}
-Config.UseTarget = GetConvar('UseTarget', 'false') == 'true' -- Use qb-target interactions (don't change this, go to your server.cfg and add `setr UseTarget true` to use this and just that from true to false or the other way around)
+Config.UseTarget = true -- PowerMoves requires qb-target; no legacy keypress fallback.
 
 -- Item names from qb-core/shared/items.lua. Items listed here are retained at
 -- residential discharge, including their unique metadata (e.g. written notebooks).
