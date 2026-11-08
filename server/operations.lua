@@ -144,7 +144,9 @@ RegisterNetEvent('parsons:operations:AddShiftNote', function(targetId, message)
             id = room.id,
             housing = room.housing or 'standard',
             occupied = owner ~= nil and owner ~= '',
-            absentSince = absentAt and absentAt > 0 and absentAt or nil
+            absentSince = absentAt and absentAt > 0 and absentAt or nil,
+            reservationExpiresAt = absentAt and absentAt > 0 and
+                (absentAt + math.max(1, tonumber(Config.EscapeRoomGraceHours) or 48) * 3600) or nil
         }
     end
     cb({authorized = true, patients = patients, staff = staffRoster, rooms = rooms})
