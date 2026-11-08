@@ -99,6 +99,9 @@ local function openCensus()
                                             label = worker.name .. ' — ' .. worker.grade
                                         }
                                     end
+                                    if patient.assignedStaff then
+                                        table.insert(choices, 1, {value = '0', label = 'Clear current assignment'})
+                                    end
                                     if #choices == 0 then
                                         lib.notify({title = 'Parsons operations', description = 'No on-duty care staff available.', type = 'error'})
                                         return
