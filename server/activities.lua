@@ -37,7 +37,7 @@ local function patient(src)
     return p
 end
 local function nearStation(src, id)
-    local station = Config.Locations.activities and Config.Locations.activities[id]
+    local station = Config.Locations and Config.Locations.activities and Config.Locations.activities[id]
     if not station or not station.coords then return false end
     local ped = GetPlayerPed(src)
     if not ped or ped == 0 then return false end
