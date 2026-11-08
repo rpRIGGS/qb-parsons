@@ -47,7 +47,10 @@ local ASSIGNMENT_KEY = 'parsons_care_assignment'
 RegisterNetEvent('parsons:operations:AssignCareStaff', function(targetId, workerId)
     local src = source
     local actor = QBCore.Functions.GetPlayer(src)
-    if not isStaff(actor) or not atReception(src) then return end
+    if not isStaff(actor) or not atReception(src) then
+        TriggerClientEvent('parsons:operations:NoteResult', src, false, 'On-duty medical staff must use reception.')
+        return
+    end
     local patient = validPatient(src, targetId)
     if not patient then
         TriggerClientEvent('parsons:operations:NoteResult', src, false, 'Active patient not found.')
@@ -130,7 +133,10 @@ end)
 RegisterNetEvent('parsons:operations:AddShiftNote', function(targetId, message)
     local src = source
     local staff = QBCore.Functions.GetPlayer(src)
-    if not isStaff(staff) or not atReception(src) then return end
+    if not isStaff(staff) or not atReception(src) then
+        TriggerClientEvent('parsons:operations:NoteResult', src, false, 'On-duty medical staff must use reception.')
+        return
+    end
     local patient = validPatient(src, targetId)
     if not patient then
         TriggerClientEvent('parsons:operations:NoteResult', src, false, 'Patient is not online or has no active Parsons admission.')
