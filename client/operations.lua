@@ -25,8 +25,37 @@ local function openCensus()
         if #options == 0 then
             options[1] = {title = 'No online Parsons patients', readOnly = true}
         end
+        local staffOptions = {}
+        for _, worker in ipairs(result.staff or {}) do
+            staffOptions[#staffOptions + 1] = {
+                title = worker.name .. ' (#' .. worker.id .. ')',
+                description = worker.job .. ' — ' .. worker.grade,
+                icon = 'user-nurse', readOnly = true
+            }
+        end
+        if #staffOptions == 0 then staffOptions[1] = {title = 'No medical staff on duty', readOnly = true} end
+        local roomOptions = {}
+        for _, room in ipairs(result.rooms or {}) do
+            roomOptions[#roomOptions + 1] = {
+                title = room.id .. ' (' .. room.housing .. ')',
+                description = not room.occupied and 'Available' or
+                    (room.absentSince and 'Reserved — patient absent' or 'Occupied'),
+                icon = room.occupied and 'bed' or 'door-open', readOnly = true
+            }
+        end
+        if #roomOptions == 0 then roomOptions[1] = {title = 'No configured patient rooms', readOnly = true} end
         lib.registerContext({id = 'parsons_medical_census', title = 'Parsons — Patient Census', options = options})
-        lib.showContext('parsons_medical_census')
+        lib.registerContext({id = 'parsons_staff_roster', title = 'Parsons — On-Duty Staff', options = staffOptions})
+        lib.registerContext({id = 'parsons_room_board', title = 'Parsons — Room Board', options = roomOptions})
+        lib.registerContext({id = 'parsons_operations', title = 'Parsons — Operations', options = {
+            {title = 'Patient census', description = #result.patients .. ' active online records',
+                icon = 'clipboard-list', menu = 'parsons_medical_census'},
+            {title = 'On-duty staff', description = #(result.staff or {}) .. ' authorized staff online',
+                icon = 'user-nurse', menu = 'parsons_staff_roster'},
+            {title = 'Room availability', description = #(result.rooms or {}) .. ' configured patient rooms',
+                icon = 'bed', menu = 'parsons_room_board'}
+        }})
+        lib.showContext('parsons_operations')
     end)
 end
 
