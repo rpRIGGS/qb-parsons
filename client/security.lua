@@ -102,15 +102,17 @@ local function restoreFixtures()
     darkened = {}
 end
 local function applyFixtureOutage(active)
-    restoreFixtures()
-    if not active then return end
+    if not active then
+        restoreFixtures()
+        return
+    end
     for _, fixture in ipairs((Config.Security.power and Config.Security.power.controllableLights) or {}) do
         if fixture.model and fixture.coords and fixture.coords.x and fixture.coords.y and fixture.coords.z then
             local model = type(fixture.model) == 'number' and fixture.model or joaat(fixture.model)
             local origin = vector3(fixture.coords.x, fixture.coords.y, fixture.coords.z)
             local radius = math.max(0.5, tonumber(fixture.radius) or 2.0)
             local entity = GetClosestObjectOfType(origin.x, origin.y, origin.z, radius, model, false, false, false)
-            if entity and entity ~= 0 and DoesEntityExist(entity) then
+            if entity and entity ~= 0 and DoesEntityExist(entity) and not darkened[entity] then
                 SetEntityLights(entity, true)
                 darkened[entity] = true
             end
