@@ -31,11 +31,13 @@ client_scripts {
     'client/activities.lua',
     'client/escape.lua',
     'client/dispatch.lua',
-    'client/security.lua'
+    'client/security.lua',
+    'client/operations.lua'
 }
 
 server_scripts {
     'server/main.lua',
     'server/activities.lua',
-    'server/security.lua'
+    'server/security.lua',
+    'server/operations.lua'
 }
