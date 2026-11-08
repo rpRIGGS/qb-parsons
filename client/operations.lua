@@ -1,0 +1,49 @@
+-- Stage 8 medical operations terminal; qb-target is required.
+local QBCore = exports['qb-core']:GetCoreObject({'Functions'})
+local function openCensus()
+    QBCore.Functions.TriggerCallback('parsons:operations:GetCensus', function(result)
+        if not result or not result.authorized then
+            lib.notify({title = 'Parsons operations', description = result and result.reason or 'Access denied.', type = 'error'})
+            return
+        end
+        local options = {}
+        for _, patient in ipairs(result.patients or {}) do
+            local status = patient.absent and 'Away / escape' or
+                (patient.transport and 'Authorized transport' or
+                (patient.reentryPending and 'Reentry clearance required' or
+                (patient.checkedIn and 'Checked in' or 'Awaiting check-in')))
+            if patient.roomExpired then status = 'Room reservation expired' end
+            options[#options + 1] = {
+                title = patient.name .. ' (#' .. patient.id .. ')',
+                description = ('%s | %s | Room: %s | %s'):format(
+                    patient.careSetting or 'residential', patient.phase or patient.kind or 'care',
+                    patient.room or 'Unassigned', status),
+                icon = 'user-doctor',
+                readOnly = true
+            }
+        end
+        if #options == 0 then
+            options[1] = {title = 'No online Parsons patients', readOnly = true}
+        end
+        lib.registerContext({id = 'parsons_medical_census', title = 'Parsons — Patient Census', options = options})
+        lib.showContext('parsons_medical_census')
+    end)
+end
+
+CreateThread(function()
+    Wait(1500)
+    local reception = Config.Reception
+    if not reception or not reception.coords then return end
+    local points = {reception.coords}
+    for _, point in ipairs(reception.additionalCoords or {}) do points[#points + 1] = point end
+    for index, point in ipairs(points) do
+        if point and point.x and point.y and point.z then
+            exports['qb-target']:AddBoxZone('parsons_medical_census_' .. index,
+                vector3(point.x, point.y, point.z), 1.5, 1.5,
+                {name = 'parsons_medical_census_' .. index, heading = point.w or 0,
+                    minZ = point.z - 1, maxZ = point.z + 1},
+                {options = {{icon = 'fas fa-clipboard-list', label = 'Parsons medical patient census',
+                    action = openCensus}}, distance = 2.5})
+        end
+    end
+end)
