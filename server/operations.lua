@@ -54,5 +54,32 @@ QBCore.Functions.CreateCallback('parsons:operations:GetCensus', function(src, cb
         end
     end
     table.sort(patients, function(a, b) return a.id < b.id end)
-    cb({authorized = true, patients = patients})
+    local staffRoster = {}
+    for _, id in ipairs(QBCore.Functions.GetPlayers()) do
+        local worker = QBCore.Functions.GetPlayer(id)
+        if isStaff(worker) then
+            local info = worker.PlayerData
+            staffRoster[#staffRoster + 1] = {
+                id = id,
+                name = ((info.charinfo and info.charinfo.firstname) or 'Staff') .. ' ' ..
+                    ((info.charinfo and info.charinfo.lastname) or ''),
+                job = info.job.label or info.job.name,
+                grade = (info.job.grade and info.job.grade.name) or 'Staff'
+            }
+        end
+    end
+    table.sort(staffRoster, function(a, b) return a.id < b.id end)
+    local rooms = {}
+    for _, room in ipairs(Config.PatientRooms or {}) do
+        local owner = GetResourceKvpString('parsons_room_' .. room.id)
+        local absentAt = GetResourceKvpInt('parsons_absence_' .. room.id)
+        rooms[#rooms + 1] = {
+            id = room.id,
+            housing = room.housing or 'standard',
+            occupied = owner ~= nil and owner ~= '',
+            occupant = owner,
+            absentSince = absentAt and absentAt > 0 and absentAt or nil
+        }
+    end
+    cb({authorized = true, patients = patients, staff = staffRoster, rooms = rooms})
 end)
