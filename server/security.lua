@@ -61,6 +61,56 @@ end
 -- so there is intentionally NO network event that converts such reports into dispatch.
 -- A future network-owned guard can use this trusted resource-only integration point.
 local lastGuardAlert = 0
+local guardEntity = 0
+local guardDeadAt = nil
+local guardAlerted = false
+
+-- Network-owned guard: server observes health/death, rather than trusting
+-- client reports about a locally spawned NPC.
+CreateThread(function()
+    while true do
+        Wait(2000)
+        local cfg = Config.Security and Config.Security.guard or {}
+        local point = Config.GuardShack and Config.GuardShack.coords
+        if point and point.x and point.y and point.z then
+            if guardEntity == 0 or not DoesEntityExist(guardEntity) then
+                local model = joaat(cfg.ped or 's_m_m_security_01')
+                guardEntity = CreatePed(4, model, point.x, point.y, point.z - 1.0, point.w or 0.0, true, true)
+                guardDeadAt = nil
+                guardAlerted = false
+                if guardEntity and guardEntity ~= 0 then
+                    SetEntityOrphanMode(guardEntity, 2)
+                end
+            elseif GetEntityHealth(guardEntity) <= 0 then
+                guardDeadAt = guardDeadAt or os.time()
+                if not guardAlerted then
+                    guardAlerted = true
+                    emit('guard_down', {coords = {x = point.x, y = point.y, z = point.z}, provider = 'Gruppe Sechs'})
+                end
+                if os.time() - guardDeadAt >= math.max(30, tonumber(cfg.respawnSeconds) or 300) then
+                    local nearby = false
+                    local radius = tonumber(cfg.clearRadius) or 35.0
+                    for _, id in ipairs(QBCore.Functions.GetPlayers()) do
+                        local ped = GetPlayerPed(id)
+                        if ped and ped ~= 0 and #(GetEntityCoords(ped) - vector3(point.x, point.y, point.z)) < radius then
+                            nearby = true
+                            break
+                        end
+                    end
+                    if not nearby then
+                        DeleteEntity(guardEntity)
+                        guardEntity = 0
+                    end
+                end
+            end
+        end
+    end
+end)
+exports('GetGuardNetworkId', function()
+    if GetInvokingResource() ~= 'qb-ambulancejob' then return nil, 'untrusted resource' end
+    return guardEntity ~= 0 and DoesEntityExist(guardEntity) and NetworkGetNetworkIdFromEntity(guardEntity) or nil
+end)
+
 exports('ReportVerifiedGuardIncident', function(kind)
     local caller = GetInvokingResource()
     if caller ~= 'qb-ambulancejob' then return false, 'untrusted resource' end
