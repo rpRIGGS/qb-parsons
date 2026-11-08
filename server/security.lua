@@ -80,6 +80,7 @@ CreateThread(function()
                 guardAlerted = false
                 if guardEntity and guardEntity ~= 0 then
                     SetEntityOrphanMode(guardEntity, 2)
+                    TriggerClientEvent('parsons:security:GuardNetworkId', -1, NetworkGetNetworkIdFromEntity(guardEntity))
                 end
             elseif GetEntityHealth(guardEntity) <= 0 then
                 guardDeadAt = guardDeadAt or os.time()
@@ -104,6 +105,12 @@ CreateThread(function()
                 end
             end
         end
+    end
+end)
+RegisterNetEvent('parsons:security:RequestGuard', function()
+    local src = source
+    if guardEntity ~= 0 and DoesEntityExist(guardEntity) then
+        TriggerClientEvent('parsons:security:GuardNetworkId', src, NetworkGetNetworkIdFromEntity(guardEntity))
     end
 end)
 exports('GetGuardNetworkId', function()
