@@ -91,6 +91,36 @@ CreateThread(function()
         end
     end
 end)
+
+-- Parsons-only fixture controls. Configure actual fixture entities in
+-- Config.Security.power.controllableLights; never touch global weather or blackout.
+local darkened = {}
+local function restoreFixtures()
+    for entity in pairs(darkened) do
+        if DoesEntityExist(entity) then SetEntityLights(entity, false) end
+    end
+    darkened = {}
+end
+local function applyFixtureOutage(active)
+    restoreFixtures()
+    if not active then return end
+    for _, fixture in ipairs((Config.Security.power and Config.Security.power.controllableLights) or {}) do
+        if fixture.model and fixture.coords and fixture.coords.x and fixture.coords.y and fixture.coords.z then
+            local model = type(fixture.model) == 'number' and fixture.model or joaat(fixture.model)
+            local origin = vector3(fixture.coords.x, fixture.coords.y, fixture.coords.z)
+            local radius = math.max(0.5, tonumber(fixture.radius) or 2.0)
+            local entity = GetClosestObjectOfType(origin.x, origin.y, origin.z, radius, model, false, false, false)
+            if entity and entity ~= 0 and DoesEntityExist(entity) then
+                SetEntityLights(entity, true)
+                darkened[entity] = true
+            end
+        end
+    end
+end
+AddEventHandler('onResourceStop', function(resource)
+    if resource == GetCurrentResourceName() then restoreFixtures() end
+end)
+
 local securityState = {powerFailure = false, gateCompromised = false, alarmActive = false}
 RegisterNetEvent('parsons:security:State', function(nextState)
     if type(nextState) ~= 'table' then return end
@@ -101,6 +131,7 @@ RegisterNetEvent('parsons:security:State', function(nextState)
     securityState.alarmActive = nextState.alarmActive == true
     -- Scoped MLO integrations can subscribe without using global weather blackout.
     if previousPower ~= securityState.powerFailure then
+        applyFixtureOutage(securityState.powerFailure)
         TriggerEvent('parsons:security:LocalPowerChanged', securityState.powerFailure)
     end
     if previousGate ~= securityState.gateCompromised then
