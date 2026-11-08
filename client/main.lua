@@ -144,82 +144,54 @@ local function TransportPrompt(returning)
     if not response or not response[1] then return end
     TriggerServerEvent('parsons:server:TransportAction', tonumber(response[1]), returning)
 end
+local guardNetworkId = nil
 local function SetupGuard()
-    if guardPed or not Config.GuardShack or not Config.GuardShack.coords then return end
-    if GetResourceState('qb-target') ~= 'started' then return end
-    local model = joaat(Config.GuardShack.ped or 's_m_m_security_01')
-    RequestModel(model)
-    while not HasModelLoaded(model) do Wait(0) end
-    local point = Config.GuardShack.coords
-    guardPed = CreatePed(0, model, point.x, point.y, point.z - 1.0, point.w or 0.0, false, true)
-    FreezeEntityPosition(guardPed, true)
-    SetEntityInvincible(guardPed, false)
-    SetBlockingOfNonTemporaryEvents(guardPed, false)
-    TaskStartScenarioInPlace(guardPed, 'WORLD_HUMAN_GUARD_STAND', 0, true)
-    GiveWeaponToPed(guardPed, joaat((Config.Security.guard and Config.Security.guard.weapon) or 'WEAPON_NIGHTSTICK'), 1, false, true)
-    SetPedFleeAttributes(guardPed, 0, false)
-    SetPedCombatAttributes(guardPed, 46, true)
-    SetPedCombatRange(guardPed, 0)
-    SetPedSeeingRange(guardPed, 12.0)
-    SetPedAlertness(guardPed, 2)
-    exports['qb-target']:AddTargetEntity(guardPed, {
-        options = {
-            {icon = 'fas fa-clipboard', label = 'Check commitment status',
-                action = RequestDischargeStatus,
-                canInteract = function() return admitted end},
-            {icon = 'fas fa-car', label = 'Check out patient for court transport',
-                action = function() TransportPrompt(false) end},
-            {icon = 'fas fa-clipboard-check', label = 'Return patient from court transport',
-                action = function() TransportPrompt(true) end}
-        }, distance = 2.5
-    })
+    if not Config.GuardShack or not Config.GuardShack.coords then return end
+    TriggerServerEvent('parsons:security:RequestGuard')
 end
+
+RegisterNetEvent('parsons:security:GuardNetworkId', function(networkId)
+    if type(networkId) ~= 'number' or networkId <= 0 then return end
+    guardNetworkId = networkId
+end)
+
+CreateThread(function()
+    while true do
+        Wait(1500)
+        if guardNetworkId and NetworkDoesNetworkIdExist(guardNetworkId) then
+            local ped = NetToPed(guardNetworkId)
+            if ped ~= 0 and DoesEntityExist(ped) and ped ~= guardPed then
+                if guardPed and DoesEntityExist(guardPed) then
+                    exports['qb-target']:RemoveTargetEntity(guardPed)
+                end
+                guardPed = ped
+                SetBlockingOfNonTemporaryEvents(ped, false)
+                SetPedFleeAttributes(ped, 0, false)
+                SetPedCombatAttributes(ped, 46, true)
+                SetPedCombatRange(ped, 0)
+                SetPedSeeingRange(ped, 12.0)
+                SetPedAlertness(ped, 2)
+                GiveWeaponToPed(ped, joaat((Config.Security.guard and Config.Security.guard.weapon) or 'WEAPON_NIGHTSTICK'), 1, false, true)
+                exports['qb-target']:AddTargetEntity(ped, {
+                    options = {
+                        {icon = 'fas fa-clipboard', label = 'Check commitment status',
+                            action = RequestDischargeStatus, canInteract = function() return admitted end},
+                        {icon = 'fas fa-car', label = 'Check out patient for court transport',
+                            action = function() TransportPrompt(false) end},
+                        {icon = 'fas fa-clipboard-check', label = 'Return patient from court transport',
+                            action = function() TransportPrompt(true) end}
+                    }, distance = 2.5
+                })
+            end
+        end
+    end
+end)
 RegisterNetEvent('parsons:client:TransportState', function(state)
     if type(state) ~= 'table' or not state.active then return end
     hold = state
     admitted = true
     QBCore.Functions.Notify(state.transportActive and 'Court transport authorized. Your hold is paused.'
         or 'Court transport completed. Report to treatment.', 'primary')
-end)
-
--- Local guard life cycle: defensive nightstick, no pursuit, and no respawn while
--- a player is within the configured clear radius. Coordinates are MLO-supplied.
-local guardDeathAt = nil
-
-local function PlayersNearGuard(radius)
-    local point = Config.GuardShack and Config.GuardShack.coords
-    if not point then return true end
-    for _, player in ipairs(GetActivePlayers()) do
-        local ped = GetPlayerPed(player)
-        if ped ~= 0 and DoesEntityExist(ped)
-            and #(GetEntityCoords(ped) - vector3(point.x, point.y, point.z)) < radius then
-            return true
-        end
-    end
-    return false
-end
-CreateThread(function()
-    while true do
-        Wait(2000)
-        if guardPed and not DoesEntityExist(guardPed) then
-            guardPed = nil
-            guardDeathAt = nil
-            SetupGuard()
-        elseif guardPed and DoesEntityExist(guardPed) then
-            if IsPedDeadOrDying(guardPed, true) then
-                guardDeathAt = guardDeathAt or GetGameTimer()
-                if GetGameTimer() - guardDeathAt >= (tonumber(Config.Security.guard.respawnSeconds) or 300) * 1000
-                    and not PlayersNearGuard(tonumber(Config.Security.guard.clearRadius) or 35.0) then
-                    if GetResourceState('qb-target') == 'started' then exports['qb-target']:RemoveTargetEntity(guardPed) end
-                    DeleteEntity(guardPed)
-                    guardPed = nil
-                    guardDeathAt = nil
-                    SetupGuard()
-                end
-
-            end
-        end
-    end
 end)
 
 RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
