@@ -47,12 +47,16 @@ local function openCensus()
         lib.registerContext({id = 'parsons_medical_census', title = 'Parsons — Patient Census', options = options})
         lib.registerContext({id = 'parsons_staff_roster', title = 'Parsons — On-Duty Staff', options = staffOptions})
         lib.registerContext({id = 'parsons_room_board', title = 'Parsons — Room Board', options = roomOptions})
+        local occupied = 0
+        for _, room in ipairs(result.rooms or {}) do
+            if room.occupied then occupied = occupied + 1 end
+        end
         lib.registerContext({id = 'parsons_operations', title = 'Parsons — Operations', options = {
             {title = 'Patient census', description = #result.patients .. ' active online records',
                 icon = 'clipboard-list', menu = 'parsons_medical_census'},
             {title = 'On-duty staff', description = #(result.staff or {}) .. ' authorized staff online',
                 icon = 'user-nurse', menu = 'parsons_staff_roster'},
-            {title = 'Room availability', description = #(result.rooms or {}) .. ' configured patient rooms',
+            {title = 'Room availability', description = occupied .. ' occupied / ' .. #(result.rooms or {}) .. ' configured rooms',
                 icon = 'bed', menu = 'parsons_room_board'}
         }})
         lib.showContext('parsons_operations')
