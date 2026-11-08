@@ -102,7 +102,8 @@ local function complete(src, session)
         completedAt = history[#history].completedAt
     })
     cooldowns[src] = cooldowns[src] or {}
-    cooldowns[src][session.id] = os.time() + math.max(0, math.floor(tonumber(def.cooldownSeconds) or 0))
+    cooldowns[src][session.id] = os.time() + math.max(0, math.min(86400,
+        math.floor(tonumber(def.cooldownSeconds) or 0)))
     sendStatus(src, nil)
     TriggerClientEvent('QBCore:Notify', src, 'Activity completed.', 'success')
 end
