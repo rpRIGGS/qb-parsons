@@ -41,6 +41,42 @@ local function validPatient(src, targetId)
     return patient
 end
 
+-- Staff-to-patient assignment for the current admission, not a legal
+-- authorization or treatment decision. Assignments persist on patient metadata.
+local ASSIGNMENT_KEY = 'parsons_care_assignment'
+RegisterNetEvent('parsons:operations:AssignCareStaff', function(targetId, workerId)
+    local src = source
+    local actor = QBCore.Functions.GetPlayer(src)
+    if not isStaff(actor) or not atReception(src) then return end
+    local patient = validPatient(src, targetId)
+    if not patient then
+        TriggerClientEvent('parsons:operations:NoteResult', src, false, 'Active patient not found.')
+        return
+    end
+    local worker = QBCore.Functions.GetPlayer(tonumber(workerId))
+    if not isStaff(worker) then
+        TriggerClientEvent('parsons:operations:NoteResult', src, false, 'Assigned staff must be on duty.')
+        return
+    end
+    local hold = patient.PlayerData.metadata.parsons_hold
+    local assignment = {
+        admissionStartedAt = hold.startedAt,
+        staffCitizenId = worker.PlayerData.citizenid,
+        staffName = ((worker.PlayerData.charinfo and worker.PlayerData.charinfo.firstname) or 'Staff') ..
+            ' ' .. ((worker.PlayerData.charinfo and worker.PlayerData.charinfo.lastname) or ''),
+        assignedBy = actor.PlayerData.citizenid,
+        assignedAt = os.time()
+    }
+    patient.Functions.SetMetaData(ASSIGNMENT_KEY, assignment)
+    patient.Functions.Save()
+    TriggerEvent('parsons:operations:CareStaffAssigned', {
+        patientCitizenId = patient.PlayerData.citizenid,
+        staffCitizenId = assignment.staffCitizenId,
+        assignedBy = assignment.assignedBy, admissionStartedAt = hold.startedAt
+    })
+    TriggerClientEvent('parsons:operations:NoteResult', src, true, 'Care staff assigned.')
+end)
+
 QBCore.Functions.CreateCallback('parsons:operations:GetActivityHistory', function(src, cb, targetId)
     local staff = QBCore.Functions.GetPlayer(src)
     if not isStaff(staff) or not atReception(src) then
@@ -101,7 +137,12 @@ RegisterNetEvent('parsons:operations:AddShiftNote', function(targetId, message)
         local data = player and player.PlayerData
         local hold = data and data.metadata and data.metadata.parsons_hold
         if type(hold) == 'table' and hold.active == true then
+            local assignment = data.metadata and data.metadata[ASSIGNMENT_KEY]
+            if type(assignment) ~= 'table' or assignment.admissionStartedAt ~= hold.startedAt then
+                assignment = nil
+            end
             patients[#patients + 1] = {
+                assignedStaff = assignment and assignment.staffName or nil,
                 id = id,
                 name = ((data.charinfo and data.charinfo.firstname) or 'Patient') .. ' ' ..
                     ((data.charinfo and data.charinfo.lastname) or ''),
