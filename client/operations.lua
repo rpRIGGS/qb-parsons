@@ -112,7 +112,8 @@ local function openCensus()
             roomOptions[#roomOptions + 1] = {
                 title = room.id .. ' (' .. room.housing .. ')',
                 description = not room.occupied and 'Available' or
-                    (room.absentSince and 'Reserved — patient absent' or 'Occupied'),
+                    (room.absentSince and ('Reserved — patient absent; expires ' ..
+                        os.date('%Y-%m-%d %H:%M', room.reservationExpiresAt or os.time())) or 'Occupied'),
                 icon = room.occupied and 'bed' or 'door-open', readOnly = true
             }
         end
