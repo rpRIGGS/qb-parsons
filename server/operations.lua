@@ -53,6 +53,16 @@ RegisterNetEvent('parsons:operations:AssignCareStaff', function(targetId, worker
         TriggerClientEvent('parsons:operations:NoteResult', src, false, 'Active patient not found.')
         return
     end
+    if tonumber(workerId) == 0 then
+        patient.Functions.SetMetaData(ASSIGNMENT_KEY, {})
+        patient.Functions.Save()
+        TriggerEvent('parsons:operations:CareStaffUnassigned', {
+            patientCitizenId = patient.PlayerData.citizenid,
+            assignedBy = actor.PlayerData.citizenid
+        })
+        TriggerClientEvent('parsons:operations:NoteResult', src, true, 'Care staff assignment cleared.')
+        return
+    end
     local worker = QBCore.Functions.GetPlayer(tonumber(workerId))
     if not isStaff(worker) then
         TriggerClientEvent('parsons:operations:NoteResult', src, false, 'Assigned staff must be on duty.')
