@@ -87,7 +87,6 @@ function GetParsonsActivity()
 end
 
 CreateThread(function()
-    if not Config.UseTarget then return end
     for id, station in pairs(Config.Locations.activities or {}) do
         local definition = Config.Activities[id]
         if definition and station.coords then
@@ -112,34 +111,6 @@ CreateThread(function()
                     distance = 2.5
                 })
         end
-    end
-end)
-
--- Non-target fallback for servers that have not enabled the UseTarget convar.
-CreateThread(function()
-    if Config.UseTarget then return end
-    while true do
-        local delay = 1000
-        if admitted and not activeActivity then
-            local playerCoords = GetEntityCoords(PlayerPedId())
-            for id, station in pairs(Config.Locations.activities or {}) do
-                if Config.Activities[id] and station.coords then
-                    local c = station.coords
-                    local distance = #(playerCoords - vector3(c.x, c.y, c.z))
-                    if distance < 2.5 then
-                        delay = 0
-                        BeginTextCommandDisplayHelp('STRING')
-                        AddTextComponentSubstringPlayerName(('Press ~INPUT_CONTEXT~ for %s'):format(Config.Activities[id].label))
-                        EndTextCommandDisplayHelp(0, false, false, -1)
-                        if IsControlJustReleased(0, 38) then
-                            TriggerServerEvent('parsons:server:StartActivity', id)
-                        end
-                        break
-                    end
-                end
-            end
-        end
-        Wait(delay)
     end
 end)
 
