@@ -213,22 +213,4 @@ AddEventHandler('onResourceStart', function(resource)
     SetupGuard()
 end)
 
-CreateThread(function()
-    if Config.UseTarget then return end
-    if not Config.Reception or not Config.Reception.coords then return end
-    local pos = Config.Reception.coords
-    local zone = BoxZone:Create(vector3(pos.x, pos.y, pos.z), 2.75, 2.75, {name='parsons_desk',debugPoly=false})
-    local inside = false
-    zone:onPlayerInOut(function(entered)
-        inside = entered
-        if entered and admitted then exports['qb-core']:DrawText(Lang:t('info.check_hold_prompt'), 'left')
-        else exports['qb-core']:HideText() end
-    end)
-    while true do
-        if inside and admitted and IsControlJustReleased(0, 38) then
-            exports['qb-core']:KeyPressed()
-            RequestDischargeStatus()
-        end
-        Wait(inside and 0 or 1000)
-    end
-end)
+
