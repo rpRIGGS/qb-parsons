@@ -23,8 +23,8 @@ Each unmapped station stays disabled until populated; the code requires no rewri
 ## Explicitly separate integration and live validation
 
 - Physical gate unlock/lock and secure bedroom/wing enforcement await the planned qb-doorlock fork; they are not falsely represented as functioning.
-- Local-only MLO lighting effects need a scoped light-control integration; `Config.Security.power.controllableLights` is currently empty. Security state, incident and monitoring behavior work independently of visual effects.
-- Guard NPCs are client-local, so damage/death cannot be trusted for server-wide incidents. The trusted `ReportVerifiedGuardIncident` export is available for a future network-owned guard integration.
+- Local-only MLO fixture light controls are implemented using `Config.Security.power.controllableLights` entries (`model`, `coords`, optional `radius`). The list is intentionally empty until fixtures are identified in the MLO. The resource does not trigger global blackout.
+- Guard NPC is now created server-side as a networked entity, with server-observed health-loss and death alerts, cooldown, delayed respawn when the area is clear, and qb-target interactions on the synchronized ped. Live testing is required to validate entity ownership, AI and replication.
 - In-server QA is still required for player escape/reentry, alarm/dispatch, sabotage and aircraft behavior. No live FiveM test has been performed by the assistant.
 
-**Development status:** Stage 7's configured security and escape logic is implemented, with MLO coordinate placeholders. Deferred integration points and live QA are tracked separately rather than repeatedly reopening earlier task stages.
+**Development status:** Task 2 / Stage 7 code implementation is complete within the agreed resource scope. Missing MLO positions/fixture identities are configuration capture, physical qb-doorlock integration is separately scoped, and live FiveM QA remains outstanding. This is not a claim of tested gameplay.
