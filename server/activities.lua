@@ -47,15 +47,20 @@ RegisterNetEvent('parsons:server:StartActivity', function(id)
     if active[src] then return end
     local now = os.time()
     if (cooldowns[src] and cooldowns[src][id] or 0) > now then return end
-    local duration = math.max(10, math.floor(tonumber(def.durationSeconds) or 60))
+    local duration = math.max(10, math.min(1800, math.floor(tonumber(def.durationSeconds) or 60)))
     nextSessionId = nextSessionId + 1
-    active[src] = {id = id, token = nextSessionId, finishAt = now + duration, durationSeconds = duration}
+    active[src] = {
+        id = id, token = nextSessionId, finishAt = now + duration,
+        durationSeconds = duration, startedAt = now,
+        citizenid = QBCore.Functions.GetPlayer(src).PlayerData.citizenid
+    }
     sendStatus(src, active[src])
 end)
 local function complete(src, session)
     if active[src] ~= session then return end
     local Player = patient(src)
-    if not Player or not nearStation(src, session.id) then
+    if not Player or Player.PlayerData.citizenid ~= session.citizenid
+        or not nearStation(src, session.id) then
         cancel(src)
         return
     end
@@ -97,7 +102,9 @@ end)
 RegisterNetEvent('parsons:server:RequestActivityStatus', function()
     local src = source
     local session = active[src]
-    if session and (not patient(src) or not nearStation(src, session.id)) then
+    if session and (not patient(src)
+        or patient(src).PlayerData.citizenid ~= session.citizenid
+        or not nearStation(src, session.id)) then
         cancel(src)
         return
     end
@@ -117,7 +124,8 @@ CreateThread(function()
     while true do
         Wait(3000)
         for src, session in pairs(active) do
-            if not patient(src) or not nearStation(src, session.id) then
+            if not patient(src) or patient(src).PlayerData.citizenid ~= session.citizenid
+                or not nearStation(src, session.id) then
                 cancel(src)
             elseif os.time() >= session.finishAt then
                 complete(src, session)
