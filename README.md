@@ -10,7 +10,7 @@ A PowerMoves RP-specific QBCore FiveM resource adapted from the original [qb-pri
 
 qb-parsons is planned to transform prison mechanics into a small psychiatric and rehabilitation facility with voluntary treatment, involuntary evaluation holds, court-ordered commitments, counseling, and secure patient accommodation.
 
-**Development status (2026-11-06):** Active implementation. Stage 7 security logic includes the facility polygon checks, temporary sabotage/gate compromise states, `electronickit` and `gatecrack` item requirements, ox_lib skill checks, and an optional PS Dispatch adapter identifying Gruppe Sechs as reporting security company. These features are **not yet live-tested**; MLO mapping and the mapped gate door IDs and in-server qb-doorlock validation remain pending. Next development priority: review and restructure Stages 1–4 admission, reception check-in, rooms and authorized guard-shack checkout, before Stage 8. Some earlier qb-prison code remains and must not be treated as complete Parsons behavior.
+**Development status (2026-11-07):** Task 2 / Stage 7 security and escape development and Task 3 / Stage 8 operations and staff management development are implemented in the repository, but **not live-tested**. The Stage 8 reception operations dashboard includes authorized patient census, on-duty staff roster, room occupancy, admission-scoped care assignments, operational handoff notes, and activity history. MLO fixture/station mapping and the separate qb-doorlock integration remain deployment/future-fork work. See `development-reference/TASK-2-STAGE-7-SECURITY-AUDIT.md` and `development-reference/TASK-3-STAGE-8-OPERATIONS-AUDIT.md` for scope and QA.
 
 ## Planned Features
 
