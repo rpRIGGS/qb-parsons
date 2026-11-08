@@ -64,7 +64,10 @@ end
 RegisterNetEvent('parsons:server:StartActivity', function(id)
     local src = source
     local def = type(id) == 'string' and Config.Activities[id]
-    if not def or not patient(src) or not nearStation(src, id) then return end
+    if not def or not patient(src) or not nearStation(src, id) then
+        TriggerClientEvent('QBCore:Notify', src, 'You are not eligible or this activity station is unavailable.', 'error')
+        return
+    end
     if active[src] then
         TriggerClientEvent('QBCore:Notify', src, 'Finish or cancel your current activity first.', 'error')
         return
