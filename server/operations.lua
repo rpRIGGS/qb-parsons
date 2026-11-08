@@ -78,8 +78,11 @@ QBCore.Functions.CreateCallback('parsons:operations:GetShiftNotes', function(src
     end
     local patient = validPatient(src, targetId)
     if not patient then cb({authorized = false, reason = 'Patient unavailable or too far away.'}); return end
-    local notes = patient.PlayerData.metadata and patient.PlayerData.metadata[NOTE_KEY]
-    cb({authorized = true, notes = type(notes) == 'table' and notes or {}})
+    local record = patient.PlayerData.metadata and patient.PlayerData.metadata[NOTE_KEY]
+    local hold = patient.PlayerData.metadata.parsons_hold
+    local notes = type(record) == 'table' and record.admissionStartedAt == hold.startedAt
+        and type(record.entries) == 'table' and record.entries or {}
+    cb({authorized = true, notes = notes})
 end)
 
 RegisterNetEvent('parsons:operations:AddShiftNote', function(targetId, message)
@@ -156,8 +159,10 @@ end)
         TriggerClientEvent('parsons:operations:NoteResult', src, false, 'Shift note must be 3–500 characters.')
         return
     end
-    local notes = patient.PlayerData.metadata and patient.PlayerData.metadata[NOTE_KEY]
-    if type(notes) ~= 'table' then notes = {} end
+    local hold = patient.PlayerData.metadata.parsons_hold
+    local record = patient.PlayerData.metadata and patient.PlayerData.metadata[NOTE_KEY]
+    local notes = type(record) == 'table' and record.admissionStartedAt == hold.startedAt
+        and type(record.entries) == 'table' and record.entries or {}
     notes[#notes + 1] = {
         at = os.time(), by = staff.PlayerData.citizenid,
         staff = ((staff.PlayerData.charinfo and staff.PlayerData.charinfo.firstname) or 'Staff') .. ' ' ..
@@ -165,7 +170,7 @@ end)
         message = message
     }
     while #notes > NOTE_LIMIT do table.remove(notes, 1) end
-    patient.Functions.SetMetaData(NOTE_KEY, notes)
+    patient.Functions.SetMetaData(NOTE_KEY, {admissionStartedAt = hold.startedAt, entries = notes})
     patient.Functions.Save()
     TriggerClientEvent('parsons:operations:NoteResult', src, true, 'Shift note saved.')
 end)
