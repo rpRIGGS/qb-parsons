@@ -36,7 +36,9 @@ local function nearStation(src, id)
     local ped = GetPlayerPed(src)
     if not ped or ped == 0 then return false end
     local c = station.coords
-    return #(GetEntityCoords(ped) - vec3(c.x, c.y, c.z)) <= (station.radius or 4.0)
+    if type(c.x) ~= 'number' or type(c.y) ~= 'number' or type(c.z) ~= 'number' then return false end
+    local radius = math.max(1.0, math.min(15.0, tonumber(station.radius) or 4.0))
+    return #(GetEntityCoords(ped) - vector3(c.x, c.y, c.z)) <= radius
 end
 RegisterNetEvent('parsons:server:StartActivity', function(id)
     local src = source
