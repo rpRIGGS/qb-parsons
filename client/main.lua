@@ -119,7 +119,7 @@ local function SetupDesk()
         SetBlockingOfNonTemporaryEvents(ped, true)
         TaskStartScenarioInPlace(ped, 'WORLD_HUMAN_CLIPBOARD', 0, true)
         deskPed[#deskPed + 1] = ped
-        if Config.UseTarget then
+        do
             exports['qb-target']:AddTargetEntity(ped, {
                 options = {
                     {icon = 'fas fa-clipboard-check', label = 'Reception check-in',
