@@ -47,6 +47,29 @@ local function validPatient(src, targetId)
     return patient
 end
 
+QBCore.Functions.CreateCallback('parsons:operations:GetActivityHistory', function(src, cb, targetId)
+    local staff = QBCore.Functions.GetPlayer(src)
+    if not isStaff(staff) or not atReception(src) then
+        cb({authorized = false, reason = 'Authorized staff must use reception.'})
+        return
+    end
+    local patient = validPatient(src, targetId)
+    if not patient then cb({authorized = false, reason = 'Patient unavailable or too far away.'}); return end
+    local hold = patient.PlayerData.metadata.parsons_hold
+    local entries = type(hold.activities) == 'table' and hold.activities or {}
+    local history = {}
+    for i = math.max(1, #entries - 49), #entries do
+        local entry = entries[i]
+        if type(entry) == 'table' then
+            history[#history + 1] = {
+                id = entry.id, completedAt = entry.completedAt,
+                durationSeconds = entry.durationSeconds
+            }
+        end
+    end
+    cb({authorized = true, history = history})
+end)
+
 QBCore.Functions.CreateCallback('parsons:operations:GetShiftNotes', function(src, cb, targetId)
     local staff = QBCore.Functions.GetPlayer(src)
     if not isStaff(staff) or not atReception(src) then
