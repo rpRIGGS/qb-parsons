@@ -77,7 +77,6 @@ QBCore.Functions.CreateCallback('parsons:operations:GetCensus', function(src, cb
             id = room.id,
             housing = room.housing or 'standard',
             occupied = owner ~= nil and owner ~= '',
-            occupant = owner,
             absentSince = absentAt and absentAt > 0 and absentAt or nil
         }
     end
