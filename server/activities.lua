@@ -32,6 +32,8 @@ local function patient(src)
         or h.kind == 'outpatient' or h.absentSince ~= nil
         or h.reentryInventoryPending == true or h.roomReservationExpired == true
         or (h.transport and h.transport.active == true) then return nil end
+    local ped = GetPlayerPed(src)
+    if not ped or ped == 0 or GetEntityHealth(ped) <= 0 then return nil end
     return p
 end
 local function nearStation(src, id)
