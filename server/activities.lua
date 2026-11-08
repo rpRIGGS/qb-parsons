@@ -89,6 +89,12 @@ local function complete(src, session)
         Player.Functions.SetMetaData('stress', math.max(0, stress - relief))
     end
     Player.Functions.Save()
+    TriggerEvent('parsons:activities:Completed', {
+        citizenid = Player.PlayerData.citizenid,
+        activity = session.id,
+        durationSeconds = session.durationSeconds,
+        completedAt = history[#history].completedAt
+    })
     cooldowns[src] = cooldowns[src] or {}
     cooldowns[src][session.id] = os.time() + math.max(0, math.floor(tonumber(def.cooldownSeconds) or 0))
     sendStatus(src, nil)
