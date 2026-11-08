@@ -32,13 +32,13 @@ RegisterNetEvent('parsons:client:AdmissionState', function(value)
 end)
 
 RegisterNetEvent('parsons:client:ActivityStatus', function(activity)
-    sessionId = sessionId + 1
-    local serial = sessionId
     local previous = activeActivity
     if previous and activity and previous.token == activity.token and previous.id == activity.id then
-        -- Server status refresh must not restart the timer or animation.
+        -- Server status refresh must not invalidate the running timer.
         return
     end
+    sessionId = sessionId + 1
+    local serial = sessionId
     StopActivityPresentation()
     activeActivity = activity or nil
     if not activeActivity then return end
