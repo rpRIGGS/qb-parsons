@@ -42,6 +42,10 @@ RegisterNetEvent('parsons:client:ActivityStatus', function(activity)
     StopActivityPresentation()
     activeActivity = activity or nil
     if not activeActivity then return end
+    if type(activeActivity.id) ~= 'string' or type(activeActivity.token) ~= 'number' then
+        activeActivity = nil
+        return
+    end
     StartActivityPresentation(activity.id)
     local duration = tonumber(activity.durationSeconds) or 0
     local startedAt = GetGameTimer()
