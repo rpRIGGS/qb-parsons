@@ -63,7 +63,9 @@ RegisterNetEvent('parsons:operations:AssignCareStaff', function(targetId, worker
         TriggerClientEvent('parsons:operations:NoteResult', src, true, 'Care staff assignment cleared.')
         return
     end
-    local worker = QBCore.Functions.GetPlayer(tonumber(workerId))
+    local staffId = tonumber(workerId)
+    if not staffId or staffId < 1 or staffId % 1 ~= 0 then return end
+    local worker = QBCore.Functions.GetPlayer(staffId)
     if not isStaff(worker) then
         TriggerClientEvent('parsons:operations:NoteResult', src, false, 'Assigned staff must be on duty.')
         return
