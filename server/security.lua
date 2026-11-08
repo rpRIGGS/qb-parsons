@@ -123,6 +123,11 @@ RegisterNetEvent('parsons:security:RequestGuard', function()
         TriggerClientEvent('parsons:security:GuardNetworkId', src, NetworkGetNetworkIdFromEntity(guardEntity))
     end
 end)
+AddEventHandler('onResourceStop', function(resource)
+    if resource == GetCurrentResourceName() and guardEntity ~= 0 and DoesEntityExist(guardEntity) then
+        DeleteEntity(guardEntity)
+    end
+end)
 exports('GetGuardNetworkId', function()
     if GetInvokingResource() ~= 'qb-ambulancejob' then return nil, 'untrusted resource' end
     return guardEntity ~= 0 and DoesEntityExist(guardEntity) and NetworkGetNetworkIdFromEntity(guardEntity) or nil
