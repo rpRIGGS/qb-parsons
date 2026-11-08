@@ -18,8 +18,12 @@ local function sendStatus(src, session)
 end
 local function cancel(src)
     if not active[src] then return end
+    local session = active[src]
     active[src] = nil
     sendStatus(src, nil)
+    TriggerEvent('parsons:activities:Cancelled', {
+        citizenid = session.citizenid, activity = session.id, cancelledAt = os.time()
+    })
 end
 local function patient(src)
     local p = QBCore.Functions.GetPlayer(src)
