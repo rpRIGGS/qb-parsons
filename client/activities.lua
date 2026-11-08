@@ -89,7 +89,9 @@ end
 CreateThread(function()
     for id, station in pairs(Config.Locations.activities or {}) do
         local definition = Config.Activities[id]
-        if definition and station.coords then
+        if definition and type(station) == 'table' and station.coords
+            and type(station.coords.x) == 'number' and type(station.coords.y) == 'number'
+            and type(station.coords.z) == 'number' then
             local activityId = id
             local c = station.coords
             exports['qb-target']:AddBoxZone('parsons_activity_' .. id, vector3(c.x, c.y, c.z),
