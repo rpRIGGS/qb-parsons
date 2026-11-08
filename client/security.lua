@@ -122,6 +122,12 @@ AddEventHandler('onResourceStop', function(resource)
 end)
 
 local securityState = {powerFailure = false, gateCompromised = false, alarmActive = false}
+CreateThread(function()
+    while true do
+        Wait(5000)
+        if securityState.powerFailure then applyFixtureOutage(true) end
+    end
+end)
 RegisterNetEvent('parsons:security:State', function(nextState)
     if type(nextState) ~= 'table' then return end
     local previousPower = securityState.powerFailure
