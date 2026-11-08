@@ -35,7 +35,7 @@ local function validPatient(src, targetId)
     local patient = QBCore.Functions.GetPlayer(id)
     local data = patient and patient.PlayerData
     local hold = data and data.metadata and data.metadata.parsons_hold
-    if not hold or hold.active ~= true then return nil end
+    if type(hold) ~= 'table' or hold.active ~= true or type(hold.startedAt) ~= 'number' then return nil end
     -- The authorized receptionist can review the active online patient
     -- anywhere in Parsons; server access is already restricted to reception.
     return patient
