@@ -79,6 +79,11 @@ end)
 RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
     TriggerServerEvent('parsons:server:RequestActivityStatus')
 end)
+AddEventHandler('onResourceStart', function(resource)
+    if resource == GetCurrentResourceName() then
+        TriggerServerEvent('parsons:server:RequestActivityStatus')
+    end
+end)
 
 RegisterNetEvent('QBCore:Client:OnPlayerUnload', function()
     admitted = false
