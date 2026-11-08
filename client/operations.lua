@@ -1,5 +1,44 @@
 -- Stage 8 medical operations terminal; qb-target is required.
 local QBCore = exports['qb-core']:GetCoreObject({'Functions'})
+local function showPatientNotes(patient)
+    QBCore.Functions.TriggerCallback('parsons:operations:GetShiftNotes', function(result)
+        if not result or not result.authorized then
+            lib.notify({title = 'Parsons operations', description = result and result.reason or 'Access denied.', type = 'error'})
+            return
+        end
+        local options = {{
+            title = 'Write shift handoff note',
+            description = 'Operational notes only — use PS-MDT for medical charts',
+            icon = 'pen',
+            onSelect = function()
+                local values = lib.inputDialog('Shift note — ' .. patient.name, {
+                    {type = 'textarea', label = 'Handoff note', required = true, min = 3, max = 500}
+                })
+                if values and type(values[1]) == 'string' then
+                    TriggerServerEvent('parsons:operations:AddShiftNote', patient.id, values[1])
+                end
+            end
+        }}
+        local notes = result.notes or {}
+        for i = #notes, 1, -1 do
+            local note = notes[i]
+            options[#options + 1] = {
+                title = (note.staff or 'Staff') .. ' — ' .. os.date('%Y-%m-%d %H:%M', note.at or os.time()),
+                description = note.message or '',
+                icon = 'note-sticky', readOnly = true
+            }
+        end
+        lib.registerContext({
+            id = 'parsons_patient_shift_notes', title = 'Shift notes — ' .. patient.name,
+            menu = 'parsons_medical_census', options = options
+        })
+        lib.showContext('parsons_patient_shift_notes')
+    end, patient.id)
+end
+RegisterNetEvent('parsons:operations:NoteResult', function(success, message)
+    lib.notify({title = 'Parsons operations', description = message or 'Shift note result', type = success and 'success' or 'error'})
+end)
+
 local function openCensus()
     QBCore.Functions.TriggerCallback('parsons:operations:GetCensus', function(result)
         if not result or not result.authorized then
@@ -19,7 +58,7 @@ local function openCensus()
                     patient.careSetting or 'residential', patient.phase or patient.kind or 'care',
                     patient.room or 'Unassigned', status),
                 icon = 'user-doctor',
-                readOnly = true
+                onSelect = function() showPatientNotes(patient) end
             }
         end
         if #options == 0 then
