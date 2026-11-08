@@ -79,9 +79,9 @@ local function openCensus()
             if patient.roomExpired then status = 'Room reservation expired' end
             options[#options + 1] = {
                 title = patient.name .. ' (#' .. patient.id .. ')',
-                description = ('%s | %s | Room: %s | %s'):format(
+                description = ('%s | %s | Room: %s | %s | Assigned: %s'):format(
                     patient.careSetting or 'residential', patient.phase or patient.kind or 'care',
-                    patient.room or 'Unassigned', status),
+                    patient.room or 'Unassigned', status, patient.assignedStaff or 'None'),
                 icon = 'user-doctor',
                 onSelect = function()
                     lib.registerContext({id = 'parsons_patient_actions', title = patient.name,
@@ -89,7 +89,27 @@ local function openCensus()
                             {title = 'Shift handoff notes', icon = 'note-sticky',
                                 onSelect = function() showPatientNotes(patient) end},
                             {title = 'Completed activities', icon = 'clipboard-check',
-                                onSelect = function() showActivityHistory(patient) end}
+                                onSelect = function() showActivityHistory(patient) end},
+                            {title = 'Assign on-duty care staff', icon = 'user-nurse',
+                                onSelect = function()
+                                    local choices = {}
+                                    for _, worker in ipairs(result.staff or {}) do
+                                        choices[#choices + 1] = {
+                                            value = tostring(worker.id),
+                                            label = worker.name .. ' — ' .. worker.grade
+                                        }
+                                    end
+                                    if #choices == 0 then
+                                        lib.notify({title = 'Parsons operations', description = 'No on-duty care staff available.', type = 'error'})
+                                        return
+                                    end
+                                    local selection = lib.inputDialog('Assign care staff — ' .. patient.name, {
+                                        {type = 'select', label = 'On-duty staff', options = choices, required = true}
+                                    })
+                                    if selection and selection[1] then
+                                        TriggerServerEvent('parsons:operations:AssignCareStaff', patient.id, tonumber(selection[1]))
+                                    end
+                                end}
                         }})
                     lib.showContext('parsons_patient_actions')
                 end
