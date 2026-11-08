@@ -36,14 +36,8 @@ local function validPatient(src, targetId)
     local data = patient and patient.PlayerData
     local hold = data and data.metadata and data.metadata.parsons_hold
     if not hold or hold.active ~= true then return nil end
-    local ped = GetPlayerPed(id)
-    if not ped or ped == 0 then return nil end
-    local zone = Config.FacilityZone
-    -- Staff may write a shift note for patients inside the facility only.
-    -- This check is a proximity restriction, not a replacement for main.lua's polygon.
-    local staffPed = GetPlayerPed(src)
-    if not staffPed or staffPed == 0 then return nil end
-    if #(GetEntityCoords(staffPed) - GetEntityCoords(ped)) > 60.0 then return nil end
+    -- The authorized receptionist can review the active online patient
+    -- anywhere in Parsons; server access is already restricted to reception.
     return patient
 end
 
@@ -54,7 +48,7 @@ QBCore.Functions.CreateCallback('parsons:operations:GetActivityHistory', functio
         return
     end
     local patient = validPatient(src, targetId)
-    if not patient then cb({authorized = false, reason = 'Patient unavailable or too far away.'}); return end
+    if not patient then cb({authorized = false, reason = 'Patient is not online or has no active Parsons admission.'}); return end
     local hold = patient.PlayerData.metadata.parsons_hold
     local entries = type(hold.activities) == 'table' and hold.activities or {}
     local history = {}
@@ -77,7 +71,7 @@ QBCore.Functions.CreateCallback('parsons:operations:GetShiftNotes', function(src
         return
     end
     local patient = validPatient(src, targetId)
-    if not patient then cb({authorized = false, reason = 'Patient unavailable or too far away.'}); return end
+    if not patient then cb({authorized = false, reason = 'Patient is not online or has no active Parsons admission.'}); return end
     local record = patient.PlayerData.metadata and patient.PlayerData.metadata[NOTE_KEY]
     local hold = patient.PlayerData.metadata.parsons_hold
     local notes = type(record) == 'table' and record.admissionStartedAt == hold.startedAt
@@ -91,7 +85,7 @@ RegisterNetEvent('parsons:operations:AddShiftNote', function(targetId, message)
     if not isStaff(staff) or not atReception(src) then return end
     local patient = validPatient(src, targetId)
     if not patient then
-        TriggerClientEvent('parsons:operations:NoteResult', src, false, 'Patient unavailable or too far away.')
+        TriggerClientEvent('parsons:operations:NoteResult', src, false, 'Patient is not online or has no active Parsons admission.')
         return
     end
     if type(message) ~= 'string' then return end
